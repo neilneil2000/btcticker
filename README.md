@@ -59,7 +59,7 @@ cp config_example.yaml config.yaml
 ```
 Install the required Python3 modules
 ```
-python3 -m pip install -r requirements.txt
+sudo python3 -m pip install -r requirements.txt
 ```
 
 ## Add Autostart
