@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 import RPi.GPIO as GPIO
-from waveshare_epd import epd2in7
+#from waveshare_epd import epd2in7
 import time
 import requests
 import urllib, json
@@ -19,6 +19,15 @@ import socket
 import textwrap
 import argparse
 import decimal
+
+import pygame
+
+os.putenv('SDL_FBDEV','/dev/fb0') #Set Output to PiTFT
+os.putenv('SDL_AUDIODRIVER','dsp') #Prevent ALSA errors
+pygame.init()
+lcd = pygame.display.set_mode((320,240))
+pygame.mouse.set_visible(False)
+
 dirname = os.path.dirname(__file__)
 picdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'images')
 fontdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fonts/googlefonts')
@@ -51,9 +60,11 @@ def human_format(num):
     while abs(num) >= 1000:
         magnitude += 1
         num /= 1000.0
+    while abs(num) < 1:
+        num = round(num,2)
     return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
 
-def _place_text(img, text, x_offset=0, y_offset=0,fontsize=40,fontstring="Forum-Regular", fill=0):
+def _place_text(img, text, x_offset=0, y_offset=0,fontsize=50,fontstring="Forum-Regular", fill=0):
     '''
     Put some centered text at a location on the image.
     '''
@@ -70,7 +81,7 @@ def _place_text(img, text, x_offset=0, y_offset=0,fontsize=40,fontstring="Forum-
     draw_y = (img_height - text_height)//2 + y_offset
     draw.text((draw_x, draw_y), text, font=font,fill=fill )
 
-def writewrappedlines(img,text,fontsize=16,y_text=20,height=15, width=25,fontstring="Roboto-Light"):
+def writewrappedlines(img,text,fontsize=20,y_text=20,height=15, width=25,fontstring="Roboto-Light"):
     lines = textwrap.wrap(text, width)
     numoflines=0
     for line in lines:
@@ -185,7 +196,7 @@ def getData(config,other):
 def beanaproblem(message):
 #   A visual cue that the wheels have fallen off
     thebean = Image.open(os.path.join(picdir,'thebean.bmp'))
-    image = Image.new('L', (264, 176), 255)    # 255: clear the image with white
+    image = Image.new('L', (320, 240), 255)    # 255: clear the image with white
     draw = ImageDraw.Draw(image)
     image.paste(thebean, (60,45))
     draw.text((95,15),str(time.strftime("%-H:%M %p, %-d %b %Y")),font =font_date,fill = 0)
@@ -197,7 +208,7 @@ def makeSpark(pricestack):
     # Subtract the mean from the sparkline to make the mean appear on the plot (it's really the x axis)
     themean= sum(pricestack)/float(len(pricestack))
     x = [xx - themean for xx in pricestack]
-    fig, ax = plt.subplots(1,1,figsize=(10,3))
+    fig, ax = plt.subplots(1,1,figsize=(14,6))
     plt.plot(x, color='k', linewidth=6)
     plt.plot(len(x)-1, x[-1], color='r', marker='o')
     # Remove the Y axis
@@ -276,7 +287,7 @@ def updateDisplay(config,pricestack,other):
     else:
         pricenowstring ="{:.5g}".format(pricenow)
     if config['display']['orientation'] == 0 or config['display']['orientation'] == 180 :
-        image = Image.new('L', (176,264), 255)    # 255: clear the image with white
+        image = Image.new('L', (240,320), 255)    # 255: clear the image with white
         draw = ImageDraw.Draw(image)
         draw.text((110,80),str(days_ago)+"day :",font =font_date,fill = 0)
         draw.text((110,95),pricechange,font =font_date,fill = 0)
@@ -287,7 +298,7 @@ def updateDisplay(config,pricestack,other):
         if config['display']['orientation'] == 180 :
             image=image.rotate(180, expand=True)
     if config['display']['orientation'] == 90 or config['display']['orientation'] == 270 :
-        image = Image.new('L', (264,176), 255)    # 255: clear the image with white
+        image = Image.new('L', (320,240), 255)    # 255: clear the image with white
         draw = ImageDraw.Draw(image)
         if other['ATH']==True:
             image.paste(ATHbitmap,(190,85))
@@ -327,15 +338,26 @@ def currencycycle(curr_string):
     curr_list = curr_list[1:]+curr_list[:1]
     return curr_list
 
+def display_image_original(img):
+
+    #epd = epd2in7.EPD()
+    #epd.Init_4Gray()
+    #epd.display_4Gray(epd.getbuffer_4Gray(img))
+    #epd.sleep()
+    return
+
 def display_image(img):
-    epd = epd2in7.EPD()
-    epd.Init_4Gray()
-    epd.display_4Gray(epd.getbuffer_4Gray(img))
-    epd.sleep()
-    thekeys=initkeys()
-#   Have to remove and add key events to make them work again
-    removekeyevent(thekeys)
-    addkeyevent(thekeys)
+
+    img = img.convert('RGB')
+    mode = img.mode
+    size = img.size
+    data = img.tobytes()
+    #logging.info(mode)
+    #logging.info(size)
+
+    py_image = pygame.image.fromstring(data, size, mode).convert()
+    lcd.blit(py_image,(0,0))
+    pygame.display.update()
     return
 
 def initkeys():
@@ -360,15 +382,6 @@ def addkeyevent(thekeys):
     GPIO.add_event_detect(thekeys[1], GPIO.FALLING, callback=keypress, bouncetime=btime)
     GPIO.add_event_detect(thekeys[2], GPIO.FALLING, callback=keypress, bouncetime=btime)
     GPIO.add_event_detect(thekeys[3], GPIO.FALLING, callback=keypress, bouncetime=btime)
-    return
-
-def removekeyevent(thekeys):
-#   Remove keypress events
-    logging.debug('Remove key events')
-    GPIO.remove_event_detect(thekeys[0])
-    GPIO.remove_event_detect(thekeys[1])
-    GPIO.remove_event_detect(thekeys[2])
-    GPIO.remove_event_detect(thekeys[3])
     return
 
 def keypress(channel):
@@ -495,9 +508,9 @@ def main():
 #       Time of start
         lastcoinfetch = time.time()
 #       Quick Sanity check on update frequency, waveshare says no faster than 180 seconds, but we'll make 60 the lower limit
-        if float(config['ticker']['updatefrequency'])<60:
-            logging.info("Throttling update frequency to 60 seconds")
-            updatefrequency=60.0
+        if float(config['ticker']['updatefrequency'])<5:
+            logging.info("Throttling update frequency to 5 seconds")
+            updatefrequency=5.0
         else:
             updatefrequency=float(config['ticker']['updatefrequency'])
         while internet() ==False:
@@ -530,7 +543,7 @@ def main():
         logging.info("ctrl + c:")
         image=beanaproblem("Keyboard Interrupt")
         display_image(image)
-        epd2in7.epdconfig.module_exit()
+        #epd2in7.epdconfig.module_exit()
         GPIO.cleanup()
         exit()
 
