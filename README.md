@@ -1,7 +1,7 @@
-A fork of llvllch/btcticker to work with TFT screen
-
 # Cryptocurrency Ticker 
 (supports all 7000+ coins/currencies listed on [CoinGecko](https://api.coingecko.com/api/v3/coins/list))
+
+A fork of llvllch/btcticker to work with TFT screen
 
 A Cryptocurrency price ticker that runs as a Python script on a Raspberry Pi connected to an [Adafruit tft display](https://learn.adafruit.com/adafruit-pitft-28-inch-resistive-touchscreen-display-raspberry-pi). The script periodically (every 5 mins by default) takes data from CoinGecko and displays a summary on the screen.
 
