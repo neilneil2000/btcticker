@@ -1,9 +1,9 @@
-[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCz5BOU9J9pB_O0B8-rDjCWQ?label=YouTube&style=social)](https://www.youtube.com/channel/UCz5BOU9J9pB_O0B8-rDjCWQ)
+A fork of llvllch/btcticker to work with TFT screen
 
-# Cryptocurrency ePaper Ticker 
+# Cryptocurrency Ticker 
 (supports all 7000+ coins/currencies listed on [CoinGecko](https://api.coingecko.com/api/v3/coins/list))
 
-An ePaper Cryptocurrency price ticker that runs as a Python script on a Raspberry Pi connected to a [Waveshare 2.7 inch monochrome ePaper display](https://www.waveshare.com/wiki/2.7inch_e-Paper_HAT). The script periodically (every 5 mins by default) takes data from CoinGecko and prints a summary to the ePaper.
+A Cryptocurrency price ticker that runs as a Python script on a Raspberry Pi connected to an [Adafruit tft display](https://learn.adafruit.com/adafruit-pitft-28-inch-resistive-touchscreen-display-raspberry-pi). The script periodically (every 5 mins by default) takes data from CoinGecko and displays a summary on the screen.
 
 A few minutes work gives you a desk ornament that will tastefully and unobtrusively monitor a coin's journey moonward.
 
@@ -25,25 +25,37 @@ sudo apt-get install -y python3-pip mc git libopenjp2-7
 sudo apt-get install -y libatlas-base-dev python3-pil
 ```
 
-Enable spi (0=on 1=off)
+Download PiTFT set up scripts
+
+```
+cd ~
+sudo pip3 install --upgrade adafruit-python-shell click
+git clone https://github.com/adafruit/Raspberry-Pi-Installer-Scripts.git
+cd Raspberry-Pi-Installer-Scripts
+```
+
+Configure PiTFT (say no to both Console Display and HDMI Mirror questions)
+
+```
+sudo python3 adafruit-pitft.py
+```
+
+Enable SPI Interface
 
 ```
 sudo raspi-config nonint do_spi 0
 ```
 
-Now clone the required software (Waveshare libraries and this script)
+Now clone this script
 
 ```
 cd ~
-git clone https://github.com/waveshare/e-Paper
-git clone https://github.com/llvllch/btcticker.git
+git clone https://github.com/neilneil2000/btcticker.git
 ```
 Move to the `btcticker` directory, copy the example config to `config.yaml` and move the required part of the waveshare directory to the `btcticker` directory
 ```
 cd btcticker
 cp config_example.yaml config.yaml
-cp -r /home/pi/e-Paper/RaspberryPi_JetsonNano/python/lib/waveshare_epd .
-rm -rf /home/pi/e-Paper
 ```
 Install the required Python3 modules
 ```
