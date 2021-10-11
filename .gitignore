@@ -2,3 +2,4 @@ waveshare_epd
 config.yaml
 .idea/
 images/
+btcticker_original.py
