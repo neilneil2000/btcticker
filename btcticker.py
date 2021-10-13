@@ -283,7 +283,7 @@ def updateDisplay(config,pricestack,other):
     elif pricenow < 1000 and d == -1:
         pricenowstring ="{:.2f}".format(pricenow)
     else:
-        pricenowstring ="{:.5g}".format(pricenow)
+        pricenowstring ="{:.3g}".format(pricenow)
     if config['display']['orientation'] == 0 or config['display']['orientation'] == 180 :
         image = Image.new('L', (240,320), 255)    # 255: clear the image with white
         draw = ImageDraw.Draw(image)
