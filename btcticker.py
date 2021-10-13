@@ -504,7 +504,7 @@ def main():
 #       Time of start
         lastcoinfetch = time.time()
 #       Quick Sanity check on update frequency
-       if float(config['ticker']['updatefrequency'])<5:
+        if float(config['ticker']['updatefrequency'])<5:
             logging.info("Throttling update frequency to 5 seconds")
             updatefrequency=5.0
         else:
