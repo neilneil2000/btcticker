@@ -186,6 +186,7 @@ def getData(config,other):
             logging.warn(message)
             time.sleep(sleep_time)  # wait before trying to fetch the data again
             sleep_time *= 2  # exponential backoff
+            sleep_time = min(sleep_time, 3600)
         else:
             break
     return timeseriesstack, other
