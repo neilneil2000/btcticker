@@ -22,7 +22,7 @@ import decimal
 
 import pygame
 
-os.putenv('SDL_FBDEV','/dev/fb0') #Set Output to PiTFT
+os.putenv('SDL_FBDEV','/dev/fb0') #Set Output to PiTFT - Could be fb1 if desktop installed
 os.putenv('SDL_AUDIODRIVER','dsp') #Prevent ALSA errors
 pygame.init()
 lcd = pygame.display.set_mode((320,240))
@@ -51,7 +51,6 @@ def internet(hostname="google.com"):
         return True
     except:
         logging.info("Google says No")
-        time.sleep(1)
     return False
 
 def human_format(num):
@@ -487,14 +486,14 @@ def main():
     except:
         logging.info("Timezone Not Set")
     try:
-        logging.info("epd2in7 BTC Frame")
+        logging.info("Build Frame")
 #       Get the configuration from config.yaml
         with open(configfile) as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         logging.info(config)
         config['display']['orientation']=int(config['display']['orientation'])
         staticcoins=config['ticker']['currency']
-#       Get the buttons for 2.7in EPD set up
+#       Get the buttons set up
         thekeys=initkeys()
 #       Add key events
         addkeyevent(thekeys)
@@ -504,14 +503,15 @@ def main():
         datapulled=False
 #       Time of start
         lastcoinfetch = time.time()
-#       Quick Sanity check on update frequency, waveshare says no faster than 180 seconds, but we'll make 60 the lower limit
-        if float(config['ticker']['updatefrequency'])<5:
+#       Quick Sanity check on update frequency
+       if float(config['ticker']['updatefrequency'])<5:
             logging.info("Throttling update frequency to 5 seconds")
             updatefrequency=5.0
         else:
             updatefrequency=float(config['ticker']['updatefrequency'])
         while internet() ==False:
             logging.info("Waiting for internet")
+            time.sleep(1)
         while True:
             if config['display']['trendingmode']==True:
                 # The hard-coded 7 is for the number of trending coins to show. Consider revising
