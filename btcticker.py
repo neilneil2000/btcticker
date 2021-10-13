@@ -361,17 +361,15 @@ def display_image(img):
     return
 
 def initkeys():
-    key1 = 5
-    key2 = 6
-    key3 = 13
-    key4 = 19
+    key1 = 17
+    key2 = 22
+    key3 = 23
     logging.debug('Setup GPIO keys')
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(key1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(key2, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(key3, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(key4, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    thekeys=[key1,key2,key3,key4]
+    thekeys=[key1,key2,key3]
     return thekeys
 
 def addkeyevent(thekeys):
@@ -381,7 +379,6 @@ def addkeyevent(thekeys):
     GPIO.add_event_detect(thekeys[0], GPIO.FALLING, callback=keypress, bouncetime=btime)
     GPIO.add_event_detect(thekeys[1], GPIO.FALLING, callback=keypress, bouncetime=btime)
     GPIO.add_event_detect(thekeys[2], GPIO.FALLING, callback=keypress, bouncetime=btime)
-    GPIO.add_event_detect(thekeys[3], GPIO.FALLING, callback=keypress, bouncetime=btime)
     return
 
 def keypress(channel):
@@ -389,7 +386,7 @@ def keypress(channel):
     with open(configfile) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     lastcoinfetch = time.time()
-    if channel == 5 and button_pressed == 0:
+    if channel == 17 and button_pressed == 0:
         logging.info('Cycle currencies')
         button_pressed = 1
         crypto_list = currencycycle(config['ticker']['currency'])
@@ -397,14 +394,14 @@ def keypress(channel):
         lastcoinfetch=fullupdate(config, lastcoinfetch)
         configwrite(config)
         return
-    elif channel == 6 and button_pressed == 0:
+    elif channel == 22 and button_pressed == 0:
         logging.info('Rotate - 90')
         button_pressed = 1
         config['display']['orientation'] = (config['display']['orientation']+90) % 360
         lastcoinfetch=fullupdate(config,lastcoinfetch)
         configwrite(config)
         return
-    elif channel == 13 and button_pressed == 0:
+    elif channel == 23 and button_pressed == 0:
         logging.info('Invert Display')
         button_pressed = 1
         config['display']['inverted'] = not config['display']['inverted']
