@@ -284,6 +284,7 @@ def updateDisplay(config,pricestack,other):
         pricenowstring ="{:.2f}".format(pricenow)
     else:
         pricenowstring ="{:.3g}".format(pricenow)
+    #THIS DOES NOT WORK PROPERLY FOR MY SCREEN SIZE
     if config['display']['orientation'] == 0 or config['display']['orientation'] == 180 :
         image = Image.new('L', (240,320), 255)    # 255: clear the image with white
         draw = ImageDraw.Draw(image)
@@ -300,9 +301,9 @@ def updateDisplay(config,pricestack,other):
         draw = ImageDraw.Draw(image)
         if other['ATH']==True:
             image.paste(ATHbitmap,(190,85))
-        draw.text((110,90),str(days_ago)+" day : "+pricechange,font =font_date,fill = 0)
+        draw.text((50,90),str(days_ago)+" day : "+pricechange,font =font_date,fill = 0) #NOT SURE WHAT THIS DOES
         if 'showvolume' in config['display'] and config['display']['showvolume']:
-            draw.text((110,105),"24h vol : " + human_format(other['volume']),font =font_date,fill = 0)
+            draw.text((100,210),"24h vol : " + human_format(other['volume']),font =font_date,fill = 0)
 
         writewrappedlines(image, symbolstring+pricenowstring,50,55,8,10,"Roboto-Medium" )
         image.paste(sparkbitmap,(80,40))
