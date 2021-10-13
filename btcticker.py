@@ -59,8 +59,6 @@ def human_format(num):
     while abs(num) >= 1000:
         magnitude += 1
         num /= 1000.0
-    while abs(num) < 1:
-        num = round(num,2)
     return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
 
 def _place_text(img, text, x_offset=0, y_offset=0,fontsize=50,fontstring="Forum-Regular", fill=0):
