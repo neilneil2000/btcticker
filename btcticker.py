@@ -63,7 +63,7 @@ def human_format(num):
 
 def _place_text(img, text, x_offset=0, y_offset=0,fontsize=50,fontstring="Forum-Regular", fill=0):
     '''
-    Put some centered text at a location on the image.
+    Put some centered text at a location on the image (Default centre of screen)
     '''
     draw = ImageDraw.Draw(img)
     try:
@@ -79,6 +79,9 @@ def _place_text(img, text, x_offset=0, y_offset=0,fontsize=50,fontstring="Forum-
     draw.text((draw_x, draw_y), text, font=font,fill=fill )
 
 def writewrappedlines(img,text,fontsize=20,y_text=20,height=15, width=25,fontstring="Roboto-Light"):
+    '''
+    Write text centred on screen to a fixed width, starting y_text down from centre 
+    '''
     lines = textwrap.wrap(text, width)
     numoflines=0
     for line in lines:
@@ -192,6 +195,9 @@ def getData(config,other):
     return timeseriesstack, other
 
 def beanaproblem(message):
+    '''
+    Display Error Screen
+    '''
 #   A visual cue that the wheels have fallen off
     thebean = Image.open(os.path.join(picdir,'thebean.bmp'))
     image = Image.new('L', (320, 240), 255)    # 255: clear the image with white
@@ -249,6 +255,16 @@ def updateDisplay(config,pricestack,other):
         currencythumbnail= 'currency/'+whichcoin+'.bmp'
     tokenfilename = os.path.join(picdir,currencythumbnail)
     sparkbitmap = Image.open(os.path.join(picdir,'spark.bmp'))
+    logging.info(sparkbitmap.size)
+#TESTING - DRAW BOX AROUND SPARKLINE
+#    draw = ImageDraw.Draw(sparkbitmap)
+#    draw.line((0,0) + sparkbitmap.size, fill=128)
+#    draw.line((0, sparkbitmap.size[1]-1, sparkbitmap.size[0]-1, 0), fill=128)
+#    draw.line((0,0,sparkbitmap.size[0]-1,0), fill=128)
+#    draw.line((0,0,0,sparkbitmap.size[1]-1), fill=128)
+#    draw.line((sparkbitmap.size[0]-1,0,sparkbitmap.size[0]-1,sparkbitmap.size[1]-1), fill=128)
+#    draw.line((0,sparkbitmap.size[1]-1,sparkbitmap.size[0]-1,sparkbitmap.size[1]-1), fill=128)
+#END TEST
     ATHbitmap= Image.open(os.path.join(picdir,'ATH.bmp'))
 #   Check for token image, if there isn't one, get on off coingecko, resize it and pop it on a white background
     if os.path.isfile(tokenfilename):
@@ -292,8 +308,8 @@ def updateDisplay(config,pricestack,other):
         draw.text((110,95),pricechange,font =font_date,fill = 0)
         writewrappedlines(image, symbolstring+pricenowstring,40,65,8,10,"Roboto-Medium" )
         draw.text((10,10),str(time.strftime("%-I:%M %p, s%d %b %Y")),font =font_date,fill = 0)
-        image.paste(tokenimage, (10,25))
-        image.paste(sparkbitmap,(10,125))
+        image.paste(tokenimage, (0,0))
+        image.paste(sparkbitmap,(10,100))
         if config['display']['orientation'] == 180 :
             image=image.rotate(180, expand=True)
     if config['display']['orientation'] == 90 or config['display']['orientation'] == 270 :
@@ -304,10 +320,9 @@ def updateDisplay(config,pricestack,other):
         draw.text((50,90),str(days_ago)+" day : "+pricechange,font =font_date,fill = 0) #NOT SURE WHAT THIS DOES
         if 'showvolume' in config['display'] and config['display']['showvolume']:
             draw.text((100,210),"24h vol : " + human_format(other['volume']),font =font_date,fill = 0)
-
-        writewrappedlines(image, symbolstring+pricenowstring,50,55,8,10,"Roboto-Medium" )
-        image.paste(sparkbitmap,(80,40))
-        image.paste(tokenimage, (0,10))
+        writewrappedlines(image, symbolstring+pricenowstring,50,55,8,10,"Roboto-Medium" ) #Write Price to Screen
+        image.paste(sparkbitmap,(88,40)) #Write Image to Screen
+        image.paste(tokenimage, (0,0))  #Write Token Icon Image to Screen
         # Don't show rank for #1 coin, #1 doesn't need to show off
         if 'showrank' in config['display'] and config['display']['showrank'] and other['market_cap_rank'] > 1:
             draw.text((10,105),"Rank: " + str("%d" % other['market_cap_rank']),font =font_date,fill = 0)
