@@ -312,18 +312,18 @@ def updateDisplay(config,pricestack,other):
         draw.text((10,10),str(time.strftime("%-I:%M %p, s%d %b %Y")),font =font_date,fill = 0)
         if config['display']['orientation'] == 180 :
             image=image.rotate(180, expand=True)
+
     if config['display']['orientation'] == 90 or config['display']['orientation'] == 270 :
         image = Image.new('L', (320,240), 255)    # 255: clear the image with white
         draw = ImageDraw.Draw(image)
-        if other['ATH']==True:
-            image.paste(ATHbitmap,(190,85))
         if 'showvolume' in config['display'] and config['display']['showvolume']:
             draw.text((100,210),"24h vol : " + human_format(other['volume']),font =font_date,fill = 0)
         writewrappedlines(image, symbolstring+pricenowstring,50,55,8,10,"Roboto-Medium" ) #Write Price to Screen
         image.paste(sparkbitmap,(88,40)) #Write Image to Screen
         image.paste(tokenimage, (0,0))  #Write Token Icon Image to Screen
         draw.text((107,142),str(days_ago)+" day : "+pricechange,font =font_date,fill = 0) #Write price change to screen
-
+        if other['ATH']==False:
+            image.paste(ATHbitmap,(174,61))
         # Don't show rank for #1 coin, #1 doesn't need to show off
         if 'showrank' in config['display'] and config['display']['showrank'] and other['market_cap_rank'] > 1:
             draw.text((10,105),"Rank: " + str("%d" % other['market_cap_rank']),font =font_date,fill = 0)
