@@ -322,7 +322,7 @@ def updateDisplay(config,pricestack,other):
         image.paste(sparkbitmap,(88,40)) #Write Image to Screen
         image.paste(tokenimage, (0,0))  #Write Token Icon Image to Screen
         draw.text((107,142),str(days_ago)+" day : "+pricechange,font =font_date,fill = 0) #Write price change to screen
-        if other['ATH']==False:
+        if other['ATH']==True:
             image.paste(ATHbitmap,(174,61))
         # Don't show rank for #1 coin, #1 doesn't need to show off
         if 'showrank' in config['display'] and config['display']['showrank'] and other['market_cap_rank'] > 1:
