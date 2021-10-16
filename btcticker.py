@@ -80,7 +80,7 @@ def _place_text(img, text, x_offset=0, y_offset=0,fontsize=50,fontstring="Forum-
 
 def writewrappedlines(img,text,fontsize=20,y_text=20,height=15, width=25,fontstring="Roboto-Light"):
     '''
-    Write text centred on screen to a fixed width, starting y_text down from centre 
+    Write text centred on screen to a fixed width, starting y_text down from centre
     '''
     lines = textwrap.wrap(text, width)
     numoflines=0
@@ -407,21 +407,21 @@ def keypress(channel):
         crypto_list = currencycycle(config['ticker']['currency'])
         config['ticker']['currency']=",".join(crypto_list)
         lastcoinfetch=fullupdate(config, lastcoinfetch)
-        configwrite(config)
+        #configwrite(config)
         return
     elif channel == 22 and button_pressed == 0:
         logging.info('Rotate - 90')
         button_pressed = 1
         config['display']['orientation'] = (config['display']['orientation']+90) % 360
         lastcoinfetch=fullupdate(config,lastcoinfetch)
-        configwrite(config)
+        #configwrite(config)
         return
     elif channel == 23 and button_pressed == 0:
         logging.info('Invert Display')
         button_pressed = 1
         config['display']['inverted'] = not config['display']['inverted']
         lastcoinfetch=fullupdate(config,lastcoinfetch)
-        configwrite(config)
+        #configwrite(config)
         return
     elif channel == 19 and button_pressed == 0:
         logging.info('Cycle fiat')
@@ -429,7 +429,7 @@ def keypress(channel):
         fiat_list = currencycycle(config['ticker']['fiatcurrency'])
         config['ticker']['fiatcurrency']=",".join(fiat_list)
         lastcoinfetch=fullupdate(config,lastcoinfetch)
-        configwrite(config)
+        #configwrite(config)
         return
     return
 
