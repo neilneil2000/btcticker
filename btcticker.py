@@ -314,7 +314,10 @@ def updateDisplay(config,pricestack,other):
             image=image.rotate(180, expand=True)
 
     if config['display']['orientation'] == 90 or config['display']['orientation'] == 270 :
-        image = Image.new('L', (320,240), 255)    # 255: clear the image with white
+        if config['display']['colour']:
+            image = Image.new('RGB', (320,240), (255,255,255))    # (255,255,255): clear the image with white
+        else:
+            image = Image.new('L', (320,240), 255)    # 255: clear the image with white
         draw = ImageDraw.Draw(image)
         if 'showvolume' in config['display'] and config['display']['showvolume']:
             draw.text((100,210),"24h vol : " + human_format(other['volume']),font =font_date,fill = 0)
@@ -439,8 +442,8 @@ def configwrite(config):
         This is so that the unit returns to its last state after it has been
         powered off
     """
-    with open(configfile, 'w') as f:
-        data = yaml.dump(config, f)
+    #with open(configfile, 'w') as f:
+     #   data = yaml.dump(config, f)
 #   Reset button pressed state after config is written
     global button_pressed
     button_pressed = 0
@@ -551,8 +554,8 @@ def main():
     except Exception as e:
         logging.error(e)
         image=beanaproblem(str(e)+" Line: "+str(e.__traceback__.tb_lineno))
-        display_image(image)  
-    except KeyboardInterrupt:    
+        display_image(image)
+    except KeyboardInterrupt:
         logging.info("ctrl + c:")
         image=beanaproblem("Keyboard Interrupt")
         display_image(image)
