@@ -126,8 +126,8 @@ def get_data(config, other):
     start_time_seconds = start_time
     end_time_seconds = end_time
     gecko_url_historical = "https://api.coingecko.com/api/v3/coins/" + which_coin + \
-                         "/market_chart/range?vs_currency=" + fiat + "&from=" + str(start_time_seconds) + \
-                         "&to=" + str(end_time_seconds)
+                           "/market_chart/range?vs_currency=" + fiat + "&from=" + str(start_time_seconds) + \
+                           "&to=" + str(end_time_seconds)
     logging.debug(gecko_url_historical)
     time_series_stack = []
     for x in range(0, num_retries):
@@ -192,7 +192,7 @@ def get_data(config, other):
                 price_now = float(live_price['last'])
                 other['market_cap_rank'] = 0  # For non-default the Rank does not show in the API, so leave blank
                 other['volume'] = float(live_price['converted_volume']['usd'])
-                all_time_high = 1000000.0  # For non-default the ATH does not show in the API, so show it when price reaches *pinky in mouth* ONE MILLION DOLLARS
+                all_time_high = 1000000.0  # For non-default the ATH does not show in the API
                 logging.debug("Got Live Data From CoinGecko")
                 time_series_stack.append(price_now)
                 if price_now > all_time_high:
@@ -291,7 +291,7 @@ def update_display(config, price_stack, other):
     else:
         logging.debug("Getting token Image from Coingecko")
         token_image_url = "https://api.coingecko.com/api/v3/coins/" + which_coin + \
-                        "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
+                          "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
         raw_image = requests.get(token_image_url, headers=headers).json()
         token_image = Image.open(requests.get(raw_image['image']['large'], headers=headers, stream=True).raw).convert(
             "RGBA")
@@ -362,7 +362,6 @@ def update_display(config, price_stack, other):
     #   If the display is inverted, invert the image using ImageOps
     if config['display']['inverted']:
         image = ImageOps.invert(image)
-    #   Return the ticker image
     return image
 
 
@@ -378,14 +377,6 @@ def currency_cycle(curr_string):
     # Rotate the array of currencies from config.... [a b c] becomes [b c a]
     curr_list = curr_list[1:] + curr_list[:1]
     return curr_list
-
-
-def display_image_original(img):
-    # epd = epd2in7.EPD()
-    # epd.Init_4Gray()
-    # epd.display_4Gray(epd.getbuffer_4Gray(img))
-    # epd.sleep()
-    return
 
 
 def display_image(img):
