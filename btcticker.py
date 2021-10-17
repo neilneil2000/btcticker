@@ -87,28 +87,28 @@ def _place_text(img, text, x_offset=0, y_offset=0, fontsize=50, fontstring="Foru
     draw.text((draw_x, draw_y), text, font=font, fill=fill)
 
 
-def writewrappedlines(img, text, fontsize=20, y_text=20, height=15, width=25, fontstring="Roboto-Light"):
+def write_wrapped_lines(img, text, fontsize=20, y_text=20, height=15, width=25, fontstring="Roboto-Light"):
     """
     Write text centred on screen to a fixed width, starting y_text down from centre
     """
     lines = textwrap.wrap(text, width)
-    numoflines = 0
+    num_lines = 0
     for line in lines:
         _place_text(img, line, 0, y_text, fontsize, fontstring)
         y_text += height
-        numoflines += 1
+        num_lines += 1
     return img
 
 
-def getgecko(url):
+def get_gecko(url):
     try:
-        geckojson = requests.get(url, headers=headers).json()
-        connectfail = False
+        gecko_json = requests.get(url, headers=headers).json()
+        connect_fail = False
     except requests.exceptions.RequestException as e:
         logging.error("Issue with CoinGecko")
-        connectfail = True
-        geckojson = {}
-    return geckojson, connectfail
+        connect_fail = True
+        gecko_json = {}
+    return gecko_json, connect_fail
 
 
 def get_data(config, other):
@@ -131,7 +131,7 @@ def get_data(config, other):
     logging.debug(gecko_url_historical)
     time_series_stack = []
     for x in range(0, num_retries):
-        raw_time_series, connect_fail = getgecko(gecko_url_historical)
+        raw_time_series, connect_fail = get_gecko(gecko_url_historical)
         if connect_fail:
             pass
         else:
@@ -142,29 +142,29 @@ def get_data(config, other):
             while i < length:
                 time_series_stack.append(float(time_series_array[i][1]))
                 i += 1
-            # A little pause before hiting the api again
+            # A little pause before hitting the api again
             time.sleep(1)
             # Get the price
         if config['ticker']['exchange'] == 'default':
             gecko_url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=" + fiat + "&ids=" + which_coin
             logging.debug(gecko_url)
-            raw_live_coin, connect_fail = getgecko(gecko_url)
+            raw_live_coin, connect_fail = get_gecko(gecko_url)
             if connect_fail:
                 pass
             else:
                 logging.debug(raw_live_coin[0])
-                liveprice = raw_live_coin[0]
-                pricenow = float(liveprice['current_price'])
-                alltimehigh = float(liveprice['ath'])
+                live_price = raw_live_coin[0]
+                price_now = float(live_price['current_price'])
+                all_time_high = float(live_price['ath'])
                 # Quick workaround for error being thrown for obscure coins. TO DO: Examine further
                 try:
-                    other['market_cap_rank'] = int(liveprice['market_cap_rank'])
+                    other['market_cap_rank'] = int(live_price['market_cap_rank'])
                 except:
                     config['display']['showrank'] = False
                     other['market_cap_rank'] = 0
-                other['volume'] = float(liveprice['total_volume'])
-                time_series_stack.append(pricenow)
-                if pricenow > alltimehigh:
+                other['volume'] = float(live_price['total_volume'])
+                time_series_stack.append(price_now)
+                if price_now > all_time_high:
                     other['ATH'] = True
                 else:
                     other['ATH'] = False
@@ -172,7 +172,7 @@ def get_data(config, other):
             gecko_url = "https://api.coingecko.com/api/v3/exchanges/" + config['ticker'][
                 'exchange'] + "/tickers?coin_ids=" + which_coin + "&include_exchange_logo=false"
             logging.debug(gecko_url)
-            raw_live_coin, connect_fail = getgecko(gecko_url)
+            raw_live_coin, connect_fail = get_gecko(gecko_url)
             if connect_fail:
                 pass
             else:
@@ -188,14 +188,14 @@ def get_data(config, other):
                     logging.error(
                         "The exchange is not listing in " + upper_fiat + ". Misconfigured - shutting down script")
                     sys.exit()
-                liveprice = raw_live_coin['tickers'][the_index]
-                pricenow = float(liveprice['last'])
+                live_price = raw_live_coin['tickers'][the_index]
+                price_now = float(live_price['last'])
                 other['market_cap_rank'] = 0  # For non-default the Rank does not show in the API, so leave blank
-                other['volume'] = float(liveprice['converted_volume']['usd'])
-                alltimehigh = 1000000.0  # For non-default the ATH does not show in the API, so show it when price reaches *pinky in mouth* ONE MILLION DOLLARS
+                other['volume'] = float(live_price['converted_volume']['usd'])
+                all_time_high = 1000000.0  # For non-default the ATH does not show in the API, so show it when price reaches *pinky in mouth* ONE MILLION DOLLARS
                 logging.debug("Got Live Data From CoinGecko")
-                time_series_stack.append(pricenow)
-                if pricenow > alltimehigh:
+                time_series_stack.append(price_now)
+                if price_now > all_time_high:
                     other['ATH'] = True
                 else:
                     other['ATH'] = False
@@ -215,20 +215,20 @@ def bean_a_problem(message):
     Display Error Screen
     """
     #   A visual cue that the wheels have fallen off
-    thebean = Image.open(os.path.join(pic_dir, 'thebean.bmp'))
+    the_bean = Image.open(os.path.join(pic_dir, 'thebean.bmp'))
     image = Image.new('L', (320, 240), 255)  # 255: clear the image with white
     draw = ImageDraw.Draw(image)
-    image.paste(thebean, (60, 45))
+    image.paste(the_bean, (60, 45))
     draw.text((95, 15), str(time.strftime("%-H:%M %p, %-d %b %Y")), font=font_date, fill=0)
-    writewrappedlines(image, "Issue: " + message)
+    write_wrapped_lines(image, "Issue: " + message)
     return image
 
 
-def make_spark(pricestack):
+def make_spark(price_stack):
     # Draw and save the sparkline that represents historical data
     # Subtract the mean from the sparkline to make the mean appear on the plot (it's really the x axis)
-    themean = sum(pricestack) / float(len(pricestack))
-    x = [xx - themean for xx in pricestack]
+    mean = sum(price_stack) / float(len(price_stack))
+    x = [xx - mean for xx in price_stack]
     fig, ax = plt.subplots(1, 1, figsize=(14, 6))
     plt.plot(x, color='k', linewidth=6)
     plt.plot(len(x) - 1, x[-1], color='r', marker='o')
@@ -240,13 +240,13 @@ def make_spark(pricestack):
     ax.axhline(c='k', linewidth=4, linestyle=(0, (5, 2, 1, 2)))
     # Save the resulting bmp file to the images directory
     plt.savefig(os.path.join(pic_dir, 'spark.png'), dpi=17)
-    imgspk = Image.open(os.path.join(pic_dir, 'spark.png'))
+    img_sparkline = Image.open(os.path.join(pic_dir, 'spark.png'))
     file_out = os.path.join(pic_dir, 'spark.bmp')
-    imgspk.save(file_out)
+    img_sparkline.save(file_out)
     plt.close(fig)
     plt.cla()  # Close plot to prevent memory error
     ax.cla()  # Close axis to prevent memory error
-    imgspk.close()
+    img_sparkline.close()
     return
 
 
@@ -257,8 +257,8 @@ def update_display(config, price_stack, other):
     they will just be the first two items of their string in config
     """
     with open(configfile) as f:
-        originalconfig = yaml.load(f, Loader=yaml.FullLoader)
-    original_coin = originalconfig['ticker']['currency']
+        original_config = yaml.load(f, Loader=yaml.FullLoader)
+    original_coin = original_config['ticker']['currency']
     original_coin_list = original_coin.split(",")
     original_coin_list = [x.strip(' ') for x in original_coin_list]
     which_coin, fiat = config_to_coin_and_fiat(config)
@@ -287,47 +287,47 @@ def update_display(config, price_stack, other):
     #   Check for token image, if there isn't one, get on off coingecko, resize it and pop it on a white background
     if os.path.isfile(token_filename):
         logging.debug("Getting token Image from Image directory")
-        tokenimage = Image.open(token_filename).convert("RGBA")
+        token_image = Image.open(token_filename).convert("RGBA")
     else:
         logging.debug("Getting token Image from Coingecko")
-        tokenimageurl = "https://api.coingecko.com/api/v3/coins/" + which_coin + \
+        token_image_url = "https://api.coingecko.com/api/v3/coins/" + which_coin + \
                         "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
-        rawimage = requests.get(tokenimageurl, headers=headers).json()
-        tokenimage = Image.open(requests.get(rawimage['image']['large'], headers=headers, stream=True).raw).convert(
+        raw_image = requests.get(token_image_url, headers=headers).json()
+        token_image = Image.open(requests.get(raw_image['image']['large'], headers=headers, stream=True).raw).convert(
             "RGBA")
         resize = 100, 100
-        tokenimage.thumbnail(resize, Image.ANTIALIAS)
+        token_image.thumbnail(resize, Image.ANTIALIAS)
         # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
         # legible on a black display
         if config['display']['inverted']:
             # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
-            tokenimage = ImageOps.invert(tokenimage.convert('RGB'))
-            tokenimage = tokenimage.convert('RGBA')
+            token_image = ImageOps.invert(token_image.convert('RGB'))
+            token_image = token_image.convert('RGBA')
         new_image = Image.new("RGBA", (120, 120), "WHITE")  # Create a white rgba background with a 10 pixel border
-        new_image.paste(tokenimage, (10, 10), tokenimage)
-        tokenimage = new_image
-        tokenimage.thumbnail((100, 100), Image.ANTIALIAS)
-        tokenimage.save(token_filename)
-    pricechangeraw = round((price_stack[-1] - price_stack[0]) / price_stack[-1] * 100, 2)
-    if pricechangeraw >= 10:
-        pricechange = str("%+d" % pricechangeraw) + "%"
+        new_image.paste(token_image, (10, 10), token_image)
+        token_image = new_image
+        token_image.thumbnail((100, 100), Image.ANTIALIAS)
+        token_image.save(token_filename)
+    price_change_raw = round((price_stack[-1] - price_stack[0]) / price_stack[-1] * 100, 2)
+    if price_change_raw >= 10:
+        price_change = str("%+d" % price_change_raw) + "%"
     else:
-        pricechange = str("%+.2f" % pricechangeraw) + "%"
+        price_change = str("%+.2f" % price_change_raw) + "%"
     d = decimal.Decimal(str(price_now)).as_tuple().exponent
     if price_now > 1000:
-        pricenowstring = str(format(int(price_now), ","))
+        price_now_string = str(format(int(price_now), ","))
     elif price_now < 1000 and d == -1:
-        pricenowstring = "{:.2f}".format(price_now)
+        price_now_string = "{:.2f}".format(price_now)
     else:
-        pricenowstring = "{:.3g}".format(price_now)
+        price_now_string = "{:.3g}".format(price_now)
     # THIS DOES NOT WORK PROPERLY FOR MY SCREEN SIZE
     if config['display']['orientation'] == 0 or config['display']['orientation'] == 180:
         image = Image.new('L', (240, 320), 255)  # 255: clear the image with white
         draw = ImageDraw.Draw(image)
         draw.text((110, 80), str(days_ago) + "day :", font=font_date, fill=0)
-        draw.text((110, 95), pricechange, font=font_date, fill=0)
-        writewrappedlines(image, symbol_string + pricenowstring, 40, 65, 8, 10, "Roboto-Medium")
-        image.paste(tokenimage, (0, 0))
+        draw.text((110, 95), price_change, font=font_date, fill=0)
+        write_wrapped_lines(image, symbol_string + price_now_string, 40, 65, 8, 10, "Roboto-Medium")
+        image.paste(token_image, (0, 0))
         image.paste(spark_bitmap, (10, 100))
         draw.text((10, 10), str(time.strftime("%-I:%M %p, s%d %b %Y")), font=font_date, fill=0)
         if config['display']['orientation'] == 180:
@@ -341,10 +341,10 @@ def update_display(config, price_stack, other):
         draw = ImageDraw.Draw(image)
         if 'showvolume' in config['display'] and config['display']['showvolume']:
             draw.text((100, 210), "24h vol : " + human_format(other['volume']), font=font_date, fill=0)
-        writewrappedlines(image, symbol_string + pricenowstring, 50, 55, 8, 10, "Roboto-Medium")  # Write Price to Screen
+        write_wrapped_lines(image, symbol_string + price_now_string, 50, 55, 8, 10, "Roboto-Medium")  # Write Price to Screen
         image.paste(spark_bitmap, (88, 40))  # Write Image to Screen
-        image.paste(tokenimage, (0, 0))  # Write Token Icon Image to Screen
-        draw.text((107, 142), str(days_ago) + " day : " + pricechange, font=font_date,
+        image.paste(token_image, (0, 0))  # Write Token Icon Image to Screen
+        draw.text((107, 142), str(days_ago) + " day : " + price_change, font=font_date,
                   fill=0)  # Write price change to screen
         if other['ATH']:
             image.paste(all_time_high_bitmap, (174, 61))
@@ -508,15 +508,15 @@ def config_to_coin_and_fiat(config):
 
 
 def get_trending(config):
-    coinlist = config['ticker']['currency']
+    coin_list = config['ticker']['currency']
     url = "https://api.coingecko.com/api/v3/search/trending"
     #   Cycle must be true if trending mode is on
     config['display']['cycle'] = True
-    trendingcoins = requests.get(url, headers=headers).json()
-    for i in range(0, (len(trendingcoins['coins']))):
-        print(trendingcoins['coins'][i]['item']['id'])
-        coinlist += "," + str(trendingcoins['coins'][i]['item']['id'])
-    config['ticker']['currency'] = coinlist
+    trending_coins = requests.get(url, headers=headers).json()
+    for i in range(0, (len(trending_coins['coins']))):
+        print(trending_coins['coins'][i]['item']['id'])
+        coin_list += "," + str(trending_coins['coins'][i]['item']['id'])
+    config['ticker']['currency'] = coin_list
     return config
 
 
@@ -527,8 +527,8 @@ def main():
     args = parser.parse_args()
 
     # Set Logging Level
-    loglevel = getattr(logging, args.log.upper(), logging.WARN)
-    logging.basicConfig(level=loglevel)
+    log_level = getattr(logging, args.log.upper(), logging.WARN)
+    logging.basicConfig(level=log_level)
 
     # Set timezone based on ip address
     try:
@@ -543,38 +543,38 @@ def main():
             config = yaml.load(f, Loader=yaml.FullLoader)
         logging.info(config)
         config['display']['orientation'] = int(config['display']['orientation'])
-        staticcoins = config['ticker']['currency']
+        static_coins = config['ticker']['currency']
 
-        thekeys = init_keys()  # Set Up Buttons
-        add_key_event(thekeys)  # Add Key Events
-        howmanycoins = len(config['ticker']['currency'].split(","))
+        keys = init_keys()  # Set Up Buttons
+        add_key_event(keys)  # Add Key Events
+        how_many_coins = len(config['ticker']['currency'].split(","))
 
-        datapulled = False
-        lastcoinfetch = time.time()
+        data_pulled = False
+        last_coin_fetch = time.time()
 
         #       Quick Sanity check on update frequency
         if float(config['ticker']['updatefrequency']) < 5:
             logging.info("Throttling update frequency to 5 seconds")
-            updatefrequency = 5.0
+            update_frequency = 5.0
         else:
-            updatefrequency = float(config['ticker']['updatefrequency'])
+            update_frequency = float(config['ticker']['updatefrequency'])
         while not internet():
             logging.info("Waiting for internet")
             time.sleep(1)
         while True:
             if config['display']['trendingmode']:
                 # The hard-coded 7 is for the number of trending coins to show. Consider revising
-                if (time.time() - lastcoinfetch > (7 + howmanycoins) * updatefrequency) or datapulled:
+                if (time.time() - last_coin_fetch > (7 + how_many_coins) * update_frequency) or data_pulled:
                     # Reset coin list to static (non trending coins from config file)
-                    config['ticker']['currency'] = staticcoins
+                    config['ticker']['currency'] = static_coins
                     config = get_trending(config)
-            if (time.time() - lastcoinfetch > updatefrequency) or datapulled:
-                if config['display']['cycle'] and datapulled:
+            if (time.time() - last_coin_fetch > update_frequency) or data_pulled:
+                if config['display']['cycle'] and data_pulled:
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
                     # config_write(config)
-                lastcoinfetch = full_update(config, lastcoinfetch)
-                datapulled = True
+                last_coin_fetch = full_update(config, last_coin_fetch)
+                data_pulled = True
             #           Reduces CPU load during that while loop
             time.sleep(0.01)
     except IOError as e:
