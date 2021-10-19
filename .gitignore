@@ -3,3 +3,7 @@ config.yaml
 .idea/
 images/
 btcticker_original.py
+btcticker.py.save
+btcticker.py.save.1
+nohup.out
+
