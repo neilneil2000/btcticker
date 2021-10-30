@@ -349,15 +349,15 @@ def update_display(price_stack, other):
     return image
 
 
-def currency_string_to_list(curr_string):
-    # Takes the string for currencies in the config.yaml file and turns it into a list
-    curr_list = curr_string.split(",")
-    curr_list = [x.strip(' ') for x in curr_list]
-    return curr_list
+def string_to_list(string):
+
+    list = string.split(",")
+    list = [x.strip(' ') for x in list]
+    return list
 
 
 def currency_cycle(curr_string):
-    curr_list = currency_string_to_list(curr_string)
+    curr_list = string_to_list(curr_string)
     # Rotate the array of currencies from config.... [a b c] becomes [b c a]
     curr_list = curr_list[1:] + curr_list[:1]
     return curr_list
@@ -439,9 +439,9 @@ def key_press(channel):
 
 def config_write():
     """
-        Write the config file following an adjustment made using the buttons
-        This is so that the unit returns to its last state after it has been
-        powered off
+    Write the config file following an adjustment made using the buttons
+    This is so that the unit returns to its last state after it has been
+    powered off
     """
     with open(configfile, 'w') as f:
        data = yaml.dump(config, f)
@@ -483,11 +483,9 @@ def full_update(last_coin_fetch):
 
 
 def config_to_coin_and_fiat():
-    crypto_list = currency_string_to_list(config['ticker']['currency'])
-    fiat_list = currency_string_to_list(config['ticker']['fiatcurrency'])
-    currency = crypto_list[0]
-    fiat = fiat_list[0]
-    return currency, fiat
+    cryptos = string_to_list(config['ticker']['currency'])
+    fiats = string_to_list(config['ticker']['fiatcurrency'])
+    return cryptos[0], fiats[0]
 
 
 def get_trending():
