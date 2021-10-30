@@ -350,7 +350,6 @@ def update_display(price_stack, other):
 
 
 def string_to_list(string):
-
     list = string.split(",")
     list = [x.strip(' ') for x in list]
     return list
@@ -365,13 +364,7 @@ def currency_cycle(curr_string):
 
 def display_image(img):
     img = img.convert('RGB')
-    mode = img.mode
-    size = img.size
-    data = img.tobytes()
-    # logging.info(mode)
-    # logging.info(size)
-
-    py_image = pygame.image.fromstring(data, size, mode).convert()
+    py_image = pygame.image.fromstring(img.tobytes(), img.size, img.mode).convert()
     lcd.blit(py_image, (0, 0))
     pygame.display.update()
     return
