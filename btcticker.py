@@ -44,7 +44,7 @@ button_pressed = 0
 
 def internet(hostname="google.com"):
     """
-    Host: google.com
+    Check whether there is an internet connection by attempting a connection to google.com
     """
     try:
         # see if we can resolve the host name -- tells us if there is
