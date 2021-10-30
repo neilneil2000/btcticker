@@ -26,7 +26,7 @@ import pygame
 
 mpl.use('Agg')
 os.putenv('SDL_FBDEV', '/dev/fb0')  # Set Output to PiTFT - Could be fb1 if desktop installed
-os.putenv('SDL_AUDIODRIVER', 'dsp')  # Prevent ALSA errors
+os.putenv('SDL_AUDIODRIVER', 'dsp')  # Prevent ALSA errors in PyGame
 pygame.init()
 lcd = pygame.display.set_mode((320, 240))
 pygame.mouse.set_visible(False)
