@@ -112,14 +112,14 @@ def get_gecko(url):
     return gecko_json, connect_fail
 
 
-def get_data(config, other):
+def get_data(other):
     """
     The function to grab the data (TO DO: need to test properly)
     """
 
     sleep_time = 10
     num_retries = 5
-    which_coin, fiat = config_to_coin_and_fiat(config)
+    which_coin, fiat = config_to_coin_and_fiat()
     logging.info("Getting Data")
     days_ago = int(config['ticker']['sparklinedays'])
     end_time = int(time.time())
@@ -251,18 +251,17 @@ def make_spark(price_stack):
     return
 
 
-def update_display(config, price_stack, other):
+def update_display(price_stack, other):
     """
     Takes the price data, the desired coin/fiat combo along with the config info for formatting
     if config is re-written following adjustment we could avoid passing the last two arguments as
     they will just be the first two items of their string in config
     """
-    with open(configfile) as f:
-        original_config = yaml.load(f, Loader=yaml.FullLoader)
-    original_coin = original_config['ticker']['currency']
+ 
+    original_coin = config['ticker']['currency']
     original_coin_list = original_coin.split(",")
     original_coin_list = [x.strip(' ') for x in original_coin_list]
-    which_coin, fiat = config_to_coin_and_fiat(config)
+    which_coin, fiat = config_to_coin_and_fiat()
     days_ago = int(config['ticker']['sparklinedays'])
     symbol_string = currency.symbol(fiat.upper())
     if fiat == "jpy" or fiat == "cny":
@@ -274,16 +273,7 @@ def update_display(config, price_stack, other):
         currency_thumbnail = 'currency/' + which_coin + '.bmp'
     token_filename = os.path.join(pic_dir, currency_thumbnail)
     spark_bitmap = Image.open(os.path.join(pic_dir, 'spark.bmp'))
-    logging.info(spark_bitmap.size)
-    # TESTING - DRAW BOX AROUND SPARKLINE
-    #    draw = ImageDraw.Draw(spark_bitmap)
-    #    draw.line((0,0) + spark_bitmap.size, fill=128)
-    #    draw.line((0, spark_bitmap.size[1]-1, spark_bitmap.size[0]-1, 0), fill=128)
-    #    draw.line((0,0,spark_bitmap.size[0]-1,0), fill=128)
-    #    draw.line((0,0,0,spark_bitmap.size[1]-1), fill=128)
-    #    draw.line((spark_bitmap.size[0]-1,0,spark_bitmap.size[0]-1,spark_bitmap.size[1]-1), fill=128)
-    #    draw.line((0,spark_bitmap.size[1]-1,spark_bitmap.size[0]-1,spark_bitmap.size[1]-1), fill=128)
-    # END TEST
+
     all_time_high_bitmap = Image.open(os.path.join(pic_dir, 'ATH.bmp'))
     #   Check for token image, if there isn't one, get on off coingecko, resize it and pop it on a white background
     if os.path.isfile(token_filename):
@@ -419,8 +409,7 @@ def add_key_event(the_keys):
 
 def key_press(channel):
     global button_pressed
-    with open(configfile) as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
+    global config
     last_coin_fetch = time.time()
     if channel == 17 and button_pressed == 0:
         logging.info('Cycle currencies')
@@ -455,7 +444,7 @@ def key_press(channel):
     return
 
 
-def config_write(config):
+def config_write():
     """
         Write the config file following an adjustment made using the buttons
         This is so that the unit returns to its last state after it has been
@@ -467,8 +456,16 @@ def config_write(config):
     global button_pressed
     button_pressed = 0
 
+def config_read():
+    """
+    Read Config File into global variable
+    """
+    global config
+    with open(configfile, 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
 
-def full_update(config, last_coin_fetch):
+
+def full_update(last_coin_fetch):
     """
     The steps required for a full update of the display
     Earlier versions of the code didn't grab new data for some operations
@@ -476,9 +473,9 @@ def full_update(config, last_coin_fetch):
     """
     other = {}
     try:
-        price_stack, all_time_high = get_data(config, other)
+        price_stack, all_time_high = get_data(other)
         make_spark(price_stack)
-        image = update_display(config, price_stack, other)
+        image = update_display(price_stack, other)
         display_image(image)
         last_grab = time.time()
         time.sleep(0.2)
@@ -491,7 +488,7 @@ def full_update(config, last_coin_fetch):
     return last_grab
 
 
-def config_to_coin_and_fiat(config):
+def config_to_coin_and_fiat():
     crypto_list = currency_string_to_list(config['ticker']['currency'])
     fiat_list = currency_string_to_list(config['ticker']['fiatcurrency'])
     currency = crypto_list[0]
@@ -499,7 +496,7 @@ def config_to_coin_and_fiat(config):
     return currency, fiat
 
 
-def get_trending(config):
+def get_trending():
     coin_list = config['ticker']['currency']
     url = "https://api.coingecko.com/api/v3/search/trending"
     #   Cycle must be true if trending mode is on
@@ -509,10 +506,11 @@ def get_trending(config):
         print(trending_coins['coins'][i]['item']['id'])
         coin_list += "," + str(trending_coins['coins'][i]['item']['id'])
     config['ticker']['currency'] = coin_list
-    return config
+    return True
 
 
 def main():
+    global config
     # Check command line for logging level
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", default='info', help='Set the log level (default: info)')
@@ -531,8 +529,7 @@ def main():
     try:
         logging.info("Build Frame")
         #       Get the configuration from config.yaml
-        with open(configfile) as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
+        config_read()
         logging.info(config)
         config['display']['orientation'] = int(config['display']['orientation'])
         static_coins = config['ticker']['currency']
@@ -560,13 +557,13 @@ def main():
                 if (time.time() - last_coin_fetch > (7 + how_many_coins) * update_frequency) or not data_pulled:
                     # Reset coin list to static (non trending coins from config file)
                     config['ticker']['currency'] = static_coins
-                    config = get_trending(config)
+                    get_trending()
             if (time.time() - last_coin_fetch > update_frequency) or not data_pulled:
                 if config['display']['cycle'] and data_pulled:
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
-                    config_write(config)
-                last_coin_fetch = full_update(config, last_coin_fetch)
+                    config_write()
+                last_coin_fetch = full_update(last_coin_fetch)
                 data_pulled = True
             #           Reduces CPU load during that while loop
             time.sleep(1)
