@@ -101,15 +101,29 @@ def write_wrapped_lines(img, text, fontsize=20, y_text=20, height=15, width=25, 
     return img
 
 
-def get_gecko(url):
+def get_gecko(coin, fiat, start_time=None, end_time=None):
+
+    if start_time and end_time:
+        url = "https://api.coingecko.com/api/v3/coins/" + coin + \
+                "/market_chart/range?vs_currency=" + fiat + "&from=" + str(start_time) + \
+                "&to=" + str(end_time)
+    else:
+        exchange = config['ticker']['exchange']
+        if exchange == "gecko" or exchange == "default":
+            url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=" + fiat + "&ids=" + coin
+        else:
+            url = "https://api.coingecko.com/api/v3/exchanges/" + exchange + \
+                "/tickers?coin_ids=" + coin + "&include_exchange_logo=false"
+    logging.debug(url)
     try:
         gecko_json = requests.get(url, headers=headers).json()
-        connect_fail = False
+        connect_ok = True
+        logging.debug("Got info from CoinGecko")
     except requests.exceptions.RequestException as e:
         logging.error("Issue with CoinGecko")
-        connect_fail = True
+        connect_ok = False
         gecko_json = {}
-    return gecko_json, connect_fail
+    return gecko_json, connect_ok
 
 
 def get_data(other):
@@ -119,68 +133,47 @@ def get_data(other):
 
     sleep_time = 10
     num_retries = 5
-    which_coin, fiat = config_to_coin_and_fiat()
+    coin, fiat = config_to_coin_and_fiat()
     logging.info("Getting Data")
-    days_ago = int(config['ticker']['sparklinedays'])
+    days = int(config['ticker']['sparklinedays'])
     end_time = int(time.time())
-    start_time = end_time - 60 * 60 * 24 * days_ago
-    start_time_seconds = start_time
-    end_time_seconds = end_time
-    gecko_url_historical = "https://api.coingecko.com/api/v3/coins/" + which_coin + \
-                           "/market_chart/range?vs_currency=" + fiat + "&from=" + str(start_time_seconds) + \
-                           "&to=" + str(end_time_seconds)
-    logging.debug(gecko_url_historical)
+    start_time = end_time - 60 * 60 * 24 * days
+
     time_series_stack = []
     for x in range(0, num_retries):
-        raw_time_series, connect_fail = get_gecko(gecko_url_historical)
-        if connect_fail:
-            pass
-        else:
-            logging.debug("Got price for the last " + str(days_ago) + " days from CoinGecko")
-            time_series_array = raw_time_series['prices']
-            length = len(time_series_array)
-            i = 0
-            while i < length:
-                time_series_stack.append(float(time_series_array[i][1]))
-                i += 1
-            # A little pause before hitting the api again
-            time.sleep(1)
-            # Get the price
+        time_series, success = get_gecko(coin, fiat, start_time, end_time)
+        if success:
+            for time_value in time_series['prices']:
+                time_series_stack.append(float(time_value[1]))
+            time.sleep(0.1)
+        
+        # Get the price
         if config['ticker']['exchange'] == 'default':
-            gecko_url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=" + fiat + "&ids=" + which_coin
-            logging.debug(gecko_url)
-            raw_live_coin, connect_fail = get_gecko(gecko_url)
-            if connect_fail:
-                pass
-            else:
-                logging.debug(raw_live_coin[0])
-                live_price = raw_live_coin[0]
-                price_now = float(live_price['current_price'])
-                all_time_high = float(live_price['ath'])
+            live_coin, success = get_gecko(coin, fiat)
+            if success:
+                logging.debug(live_coin[0])
+                live_coin = live_coin[0]
+                price_now = float(live_coin['current_price'])
+                all_time_high = float(live_coin['ath'])
                 # Quick workaround for error being thrown for obscure coins. TO DO: Examine further
                 try:
-                    other['market_cap_rank'] = int(live_price['market_cap_rank'])
+                    other['market_cap_rank'] = int(live_coin['market_cap_rank'])
                 except:
                     config['display']['showrank'] = False
                     other['market_cap_rank'] = 0
-                other['volume'] = float(live_price['total_volume'])
+                other['volume'] = float(live_coin['total_volume'])
                 time_series_stack.append(price_now)
-                if price_now > all_time_high:
+                if price_now > all_time_high: #Markets are probably too volatile for this simple method to be useful
                     other['ATH'] = True
                 else:
                     other['ATH'] = False
         else:
-            gecko_url = "https://api.coingecko.com/api/v3/exchanges/" + config['ticker'][
-                'exchange'] + "/tickers?coin_ids=" + which_coin + "&include_exchange_logo=false"
-            logging.debug(gecko_url)
-            raw_live_coin, connect_fail = get_gecko(gecko_url)
-            if connect_fail:
-                pass
-            else:
+            live_coin, success = get_gecko(coin, fiat)
+            if success:
                 the_index = -1
                 upper_fiat = fiat.upper()
-                for i in range(len(raw_live_coin['tickers'])):
-                    target = raw_live_coin['tickers'][i]['target']
+                for i in range(len(live_coin['tickers'])):
+                    target = live_coin['tickers'][i]['target']
                     if target == upper_fiat:
                         the_index = i
                         logging.debug("Found " + upper_fiat + " at index " + str(i))
@@ -189,10 +182,10 @@ def get_data(other):
                     logging.error(
                         "The exchange is not listing in " + upper_fiat + ". Misconfigured - shutting down script")
                     sys.exit()
-                live_price = raw_live_coin['tickers'][the_index]
-                price_now = float(live_price['last'])
+                live_coin = live_coin['tickers'][the_index]
+                price_now = float(live_coin['last'])
                 other['market_cap_rank'] = 0  # For non-default the Rank does not show in the API, so leave blank
-                other['volume'] = float(live_price['converted_volume']['usd'])
+                other['volume'] = float(live_coin['converted_volume']['usd'])
                 all_time_high = 1000000.0  # For non-default the ATH does not show in the API
                 logging.debug("Got Live Data From CoinGecko")
                 time_series_stack.append(price_now)
@@ -200,14 +193,14 @@ def get_data(other):
                     other['ATH'] = True
                 else:
                     other['ATH'] = False
-        if connect_fail:
+        if success:
+            break
+        else:
             message = "Trying again in ", sleep_time, " seconds"
             logging.warning(message)
             time.sleep(sleep_time)  # wait before trying to fetch the data again
             sleep_time *= 2  # exponential backoff
             sleep_time = min(sleep_time, 3600)
-        else:
-            break
     return time_series_stack, other
 
 
@@ -416,21 +409,21 @@ def key_press(channel):
         button_pressed = 1
         crypto_list = currency_cycle(config['ticker']['currency'])
         config['ticker']['currency'] = ",".join(crypto_list)
-        last_coin_fetch = full_update(config, last_coin_fetch)
+        last_coin_fetch = full_update(last_coin_fetch)
         config_write(config)
         return
     elif channel == 22 and button_pressed == 0:
         logging.info('Rotate - 90')
         button_pressed = 1
         config['display']['orientation'] = (config['display']['orientation'] + 90) % 360
-        last_coin_fetch = full_update(config, last_coin_fetch)
+        last_coin_fetch = full_update(last_coin_fetch)
         config_write(config)
         return
     elif channel == 23 and button_pressed == 0:
         logging.info('Invert Display')
         button_pressed = 1
         config['display']['inverted'] = not config['display']['inverted']
-        last_coin_fetch = full_update(config, last_coin_fetch)
+        last_coin_fetch = full_update(last_coin_fetch)
         config_write(config)
         return
     elif channel == 19 and button_pressed == 0:
@@ -438,7 +431,7 @@ def key_press(channel):
         button_pressed = 1
         fiat_list = currency_cycle(config['ticker']['fiatcurrency'])
         config['ticker']['fiatcurrency'] = ",".join(fiat_list)
-        last_coin_fetch = full_update(config, last_coin_fetch)
+        last_coin_fetch = full_update(last_coin_fetch)
         config_write(config)
         return
     return
@@ -455,6 +448,7 @@ def config_write():
     #   Reset button pressed state after config is written
     global button_pressed
     button_pressed = 0
+
 
 def config_read():
     """
@@ -536,10 +530,11 @@ def main():
 
         keys = init_keys()  # Set Up Buttons
         add_key_event(keys)  # Add Key Events
+        
         how_many_coins = len(config['ticker']['currency'].split(","))
 
         data_pulled = False
-        last_coin_fetch = time.time()
+        last_fetch_time = time.time()
 
         #       Quick Sanity check on update frequency
         if float(config['ticker']['updatefrequency']) < 5:
@@ -547,26 +542,26 @@ def main():
             update_frequency = 5.0
         else:
             update_frequency = float(config['ticker']['updatefrequency'])
-            logging.debug("Update Frequency is " + str(update_frequency) + " seconds")
+
         while not internet():
             logging.info("Waiting for internet")
             time.sleep(1)
+
         while True:
-            if config['display']['trendingmode']:
+            if config['display']['trendingmode']: #NEIL: I don't understand what this is doing
                 # The hard-coded 7 is for the number of trending coins to show. Consider revising
-                if (time.time() - last_coin_fetch > (7 + how_many_coins) * update_frequency) or not data_pulled:
+                if (time.time() - last_fetch_time > (7 + how_many_coins) * update_frequency) or not data_pulled:
                     # Reset coin list to static (non trending coins from config file)
                     config['ticker']['currency'] = static_coins
                     get_trending()
-            if (time.time() - last_coin_fetch > update_frequency) or not data_pulled:
+            if (time.time() - last_fetch_time > update_frequency) or not data_pulled:
                 if config['display']['cycle'] and data_pulled:
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
                     config_write()
-                last_coin_fetch = full_update(last_coin_fetch)
+                last_fetch_time = full_update(last_fetch_time)
                 data_pulled = True
-            #           Reduces CPU load during that while loop
-            time.sleep(1)
+            time.sleep(update_frequency)
     except IOError as e:
         logging.error(e)
         image = bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
