@@ -40,6 +40,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
     Chrome/39.0.2171.95 Safari/537.36'}
 button_pressed = 0
+config = {}
 
 
 def internet(hostname="google.com"):
@@ -460,8 +461,8 @@ def config_write(config):
         This is so that the unit returns to its last state after it has been
         powered off
     """
-    # with open(configfile, 'w') as f:
-    #   data = yaml.dump(config, f)
+    with open(configfile, 'w') as f:
+       data = yaml.dump(config, f)
     #   Reset button pressed state after config is written
     global button_pressed
     button_pressed = 0
