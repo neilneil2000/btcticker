@@ -549,17 +549,22 @@ def main():
             update_frequency = 5.0
         else:
             update_frequency = float(config['ticker']['updatefrequency'])
+            logging.debug("Update Frequency is " + str(update_frequency) + " seconds")
         while not internet():
             logging.info("Waiting for internet")
             time.sleep(1)
         while True:
             if config['display']['trendingmode']:
                 # The hard-coded 7 is for the number of trending coins to show. Consider revising
-                if (time.time() - last_coin_fetch > (7 + how_many_coins) * update_frequency) or data_pulled:
+                if (time.time() - last_coin_fetch > (7 + how_many_coins) * update_frequency) or not data_pulled:
                     # Reset coin list to static (non trending coins from config file)
                     config['ticker']['currency'] = static_coins
                     config = get_trending(config)
-            if (time.time() - last_coin_fetch > update_frequency) or data_pulled:
+            logging.debug("Current time: " + str(time.time()))
+            logging.debug("Last Fetch at: " + str(last_coin_fetch))
+            logging.debug("Elapsed time since last fetch: " + str(time.time() - last_coin_fetch))
+            logging.debug("Data_Pulled set to: " + str(data_pulled))
+            if (time.time() - last_coin_fetch > update_frequency) or not data_pulled:
                 if config['display']['cycle'] and data_pulled:
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
