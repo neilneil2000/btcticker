@@ -427,21 +427,21 @@ def key_press(channel):
         crypto_list = currency_cycle(config['ticker']['currency'])
         config['ticker']['currency'] = ",".join(crypto_list)
         last_coin_fetch = full_update(config, last_coin_fetch)
-        # config_write(config)
+        config_write(config)
         return
     elif channel == 22 and button_pressed == 0:
         logging.info('Rotate - 90')
         button_pressed = 1
         config['display']['orientation'] = (config['display']['orientation'] + 90) % 360
         last_coin_fetch = full_update(config, last_coin_fetch)
-        # config_write(config)
+        config_write(config)
         return
     elif channel == 23 and button_pressed == 0:
         logging.info('Invert Display')
         button_pressed = 1
         config['display']['inverted'] = not config['display']['inverted']
         last_coin_fetch = full_update(config, last_coin_fetch)
-        # config_write(config)
+        config_write(config)
         return
     elif channel == 19 and button_pressed == 0:
         logging.info('Cycle fiat')
@@ -449,7 +449,7 @@ def key_press(channel):
         fiat_list = currency_cycle(config['ticker']['fiatcurrency'])
         config['ticker']['fiatcurrency'] = ",".join(fiat_list)
         last_coin_fetch = full_update(config, last_coin_fetch)
-        # config_write(config)
+        config_write(config)
         return
     return
 
@@ -563,7 +563,7 @@ def main():
                 if config['display']['cycle'] and data_pulled:
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
-                    # config_write(config)
+                    config_write(config)
                 last_coin_fetch = full_update(config, last_coin_fetch)
                 data_pulled = True
             #           Reduces CPU load during that while loop
