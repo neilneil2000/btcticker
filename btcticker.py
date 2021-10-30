@@ -560,10 +560,6 @@ def main():
                     # Reset coin list to static (non trending coins from config file)
                     config['ticker']['currency'] = static_coins
                     config = get_trending(config)
-            logging.debug("Current time: " + str(time.time()))
-            logging.debug("Last Fetch at: " + str(last_coin_fetch))
-            logging.debug("Elapsed time since last fetch: " + str(time.time() - last_coin_fetch))
-            logging.debug("Data_Pulled set to: " + str(data_pulled))
             if (time.time() - last_coin_fetch > update_frequency) or not data_pulled:
                 if config['display']['cycle'] and data_pulled:
                     crypto_list = currency_cycle(config['ticker']['currency'])
@@ -572,7 +568,7 @@ def main():
                 last_coin_fetch = full_update(config, last_coin_fetch)
                 data_pulled = True
             #           Reduces CPU load during that while loop
-            time.sleep(0.01)
+            time.sleep(1)
     except IOError as e:
         logging.error(e)
         image = bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
