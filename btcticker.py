@@ -394,12 +394,9 @@ def key_press(channel):
     global callback_running
     global config
     global last_coin_fetch
-    logging.debug("Callback Triggered")
     while(callback_running):
-        logging.debug("Callback already running...sleeping")
         time.sleep(0.1)
     callback_running = True
-    logging.debug("Callback Running...Selecting Channel...") 
     if channel == 17:
         logging.info('Cycle currencies')
         crypto_list = currency_cycle(config['ticker']['currency'])
