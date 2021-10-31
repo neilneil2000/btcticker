@@ -39,10 +39,11 @@ font_date = ImageFont.truetype(os.path.join(font_dir, 'PixelSplitter-Bold.ttf'),
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
     Chrome/39.0.2171.95 Safari/537.36'}
-button_pressed = 0
+callback_running = False
 config = {}
 static_coins = {}
 live_coin = {}
+last_coin_fetch = 0
 
 def internet(hostname="google.com"):
     """
@@ -382,7 +383,7 @@ def init_keys():
 def add_key_event(the_keys):
     #   Add key_press events
     logging.debug('Add key events')
-    bounce_time = 300
+    bounce_time = 500
     GPIO.add_event_detect(the_keys[0], GPIO.FALLING, callback=key_press, bouncetime=bounce_time)
     GPIO.add_event_detect(the_keys[1], GPIO.FALLING, callback=key_press, bouncetime=bounce_time)
     GPIO.add_event_detect(the_keys[2], GPIO.FALLING, callback=key_press, bouncetime=bounce_time)
@@ -390,39 +391,32 @@ def add_key_event(the_keys):
 
 
 def key_press(channel):
-    global button_pressed
+    global callback_running
     global config
-    last_coin_fetch = time.time()
-    if channel == 17 and button_pressed == 0:
+    global last_coin_fetch
+    logging.debug("Callback Triggered")
+    while(callback_running):
+        logging.debug("Callback already running...sleeping")
+        time.sleep(0.1)
+    callback_running = True
+    logging.debug("Callback Running...Selecting Channel...") 
+    if channel == 17:
         logging.info('Cycle currencies')
-        button_pressed = 1
         crypto_list = currency_cycle(config['ticker']['currency'])
         config['ticker']['currency'] = ",".join(crypto_list)
-        last_coin_fetch = full_update(last_coin_fetch)
-        config_write(config)
-        return
-    elif channel == 22 and button_pressed == 0:
+    elif channel == 22:
         logging.info('Rotate - 90')
-        button_pressed = 1
         config['display']['orientation'] = (config['display']['orientation'] + 90) % 360
-        last_coin_fetch = full_update(last_coin_fetch)
-        config_write(config)
-        return
-    elif channel == 23 and button_pressed == 0:
+    elif channel == 23:
         logging.info('Invert Display')
-        button_pressed = 1
         config['display']['inverted'] = not config['display']['inverted']
-        last_coin_fetch = full_update(last_coin_fetch)
-        config_write(config)
-        return
-    elif channel == 19 and button_pressed == 0:
+    elif channel == 19:
         logging.info('Cycle fiat')
-        button_pressed = 1
         fiat_list = currency_cycle(config['ticker']['fiatcurrency'])
         config['ticker']['fiatcurrency'] = ",".join(fiat_list)
-        last_coin_fetch = full_update(last_coin_fetch)
-        config_write(config)
-        return
+    last_coin_fetch = full_update(last_coin_fetch)
+    config_write()
+    callback_running = False
     return
 
 
@@ -434,9 +428,7 @@ def config_write():
     """
     with open(configfile, 'w') as f:
        data = yaml.dump(config, f)
-    #   Reset button pressed state after config is written
-    global button_pressed
-    button_pressed = 0
+
 
 
 def config_read():
@@ -491,6 +483,7 @@ def config_to_coin_and_fiat():
 
 def main():
     global config
+    global last_coin_fetch
     # Check command line for logging level
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", default='info', help='Set the log level (default: info)')
@@ -521,14 +514,17 @@ def main():
         time.sleep(1)
     
     try:
-        while True:
-            if (time.time() - last_fetch_time > update_frequency):
-                last_fetch_time = full_update(last_fetch_time)
-                if config['display']['cycle']:
+        if config['display']['cycle']:
+            while True:
+                if (time.time() - last_fetch_time > update_frequency):
+                    last_fetch_time = full_update(last_fetch_time)
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
                     config_write()
-            time.sleep(update_frequency)
+                time.sleep(update_frequency)
+        else:
+            while True:
+                time.sleep(60)
     except IOError as e:
         logging.error(e)
         image = bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
