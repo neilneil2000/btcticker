@@ -411,7 +411,7 @@ def key_press(channel):
         logging.info('Cycle fiat')
         fiat_list = currency_cycle(config['ticker']['fiatcurrency'])
         config['ticker']['fiatcurrency'] = ",".join(fiat_list)
-    last_coin_fetch = full_update(last_coin_fetch)
+    last_coin_fetch = full_update(last_coin_fetch) #TODO: Split Screen Update and Data Update to allow screen changes independent of changing currency
     config_write()
     callback_running = False
     return
@@ -425,7 +425,6 @@ def config_write():
     """
     with open(configfile, 'w') as f:
        data = yaml.dump(config, f)
-
 
 
 def config_read():
@@ -478,6 +477,7 @@ def config_to_coin_and_fiat():
     fiats = string_to_list(config['ticker']['fiatcurrency'])
     return cryptos[0], fiats[0]
 
+
 def main():
     global config
     global last_coin_fetch
@@ -518,7 +518,7 @@ def main():
                     crypto_list = currency_cycle(config['ticker']['currency'])
                     config['ticker']['currency'] = ",".join(crypto_list)
                     config_write()
-                time.sleep(update_frequency)
+                time.sleep(0.1)
         else:
             while True:
                 time.sleep(60)
