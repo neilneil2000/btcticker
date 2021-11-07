@@ -41,6 +41,7 @@ config = {}
 static_coins = {}
 live_coin = {}
 last_coin_fetch = 0
+lcd = 0
 
 def internet(hostname="google.com"):
     """
@@ -359,6 +360,7 @@ def currency_cycle(curr_string):
 
 
 def display_image(img):
+    global lcd
     img = img.convert('RGB')
     py_image = pygame.image.fromstring(img.tobytes(), img.size, img.mode).convert()
     lcd.blit(py_image, (0, 0))
@@ -480,6 +482,7 @@ def config_to_coin_and_fiat():
 def main():
     global config
     global last_coin_fetch
+    global lcd
     # Check command line for logging level
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", default='info', help='Set the log level (default: info)')
