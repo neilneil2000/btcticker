@@ -27,9 +27,6 @@ import pygame
 mpl.use('Agg')
 os.putenv('SDL_FBDEV', '/dev/fb0')  # Set Output to PiTFT - Could be fb1 if desktop installed
 os.putenv('SDL_AUDIODRIVER', 'dsp')  # Prevent ALSA errors in PyGame
-pygame.init()
-lcd = pygame.display.set_mode((320, 240))
-pygame.mouse.set_visible(False)
 
 dir_name = os.path.dirname(__file__)
 pic_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'images')
@@ -67,11 +64,13 @@ def human_format(num):
     """
     Convert value to max 3 decimal places with Million, Billion, Trillion etc 
     """
-    num = float('{:.3g}'.format(num))
+    num = float('{:.3f}'.format(num))
     magnitude = 0
     while abs(num) >= 1000:
         magnitude += 1
         num /= 1000.0
+   # if magnitude == 0:
+        #return '{}'.format('{:2f}'.format(num))
     return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
 
 
@@ -505,6 +504,10 @@ def main():
     number_of_coins = len(config['ticker']['currency'].split(","))
 
     last_fetch_time = time.time() - update_frequency #Force first update
+
+    pygame.init()
+    lcd = pygame.display.set_mode((320, 240))
+    pygame.mouse.set_visible(False)
 
     while not internet():
         logging.info("Waiting for internet")
