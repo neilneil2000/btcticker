@@ -7,3 +7,4 @@ btcticker.py.save
 btcticker.py.save.1
 nohup.out
 .vscode/
+__pycache__/
