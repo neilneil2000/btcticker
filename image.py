@@ -17,62 +17,159 @@ class slide:
     Class representing a slide for the ticker, showing the logo, graph, price etc
      - next_slide()  Build new slide with new data for next currency in list
     """
+    HEADERS = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
+                 Chrome/39.0.2171.95 Safari/537.36'}
     dir_name = os.path.dirname(__file__)
 
     def __init__(self):
+        self.logger = logging.getLogger("btcticker.display.image")
         self.pic_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'images')
         self.font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fonts/googlefonts')
         
         self.font_date = ImageFont.truetype(os.path.join(self.font_dir, 'PixelSplitter-Bold.ttf'), 11)
-
-        self.headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
-                     Chrome/39.0.2171.95 Safari/537.36'}
-
         self.my_spark = spark(self.pic_dir)
 
-    def generate_slide(self, coin, fiat, price_now, price_stack,all_time_high_flag, volume,days,inverted,orientation,colour):
-        logging.debug(price_stack)
-        self.my_spark.make_spark(price_stack)
-        return self.build_image(coin,fiat,price_now,price_stack, all_time_high_flag,volume, days, inverted,orientation,colour)
+        self.image = None
+        self.draw = None
+        self.colour = True  # TODO: Read it in from the config file
+        self.inverted = False
+        self.volume = False
+        self.data = None
+        self.price_now_string = ""
+        self.days = 0
+
+        self.logger.debug("Slide class initialised, returning...")
+        
+    def generate_slide(self, data, days, inverted, orientation, colour):
+        self.data = data
+        self.days = days
+        self.inverted = inverted
+        self.orientation = orientation
+        self.colour = colour
+        self.my_spark.make_spark(self.data.price_stack)
+        self.build_image()
+        return self.image
         
 
-
-    def build_image(self,coin,fiat,price_now, price_stack,all_time_high_flag,volume,days, inverted,orientation,colour=True):
+    def build_image(self):
         """
         Takes the price data, the desired coin/fiat combo along with the config info for formatting
         if config is re-written following adjustment we could avoid passing the last two arguments as
         they will just be the first two items of their string in config
-        """
- 
-        symbol_string = currency.symbol(fiat.upper())
-        if fiat == "jpy" or fiat == "cny":
-            symbol_string = "¥"
+        """        
+        # THIS DOES NOT WORK PROPERLY FOR MY SCREEN SIZE
+        if self.orientation == 0 or self.orientation == 180:
+            self.white_background(self.colour)
+            self.apply_spark(10,100)
+            self.apply_token(0,0)
+            self.apply_price(65)
+            self.apply_price_change(110,95)
+            self.apply_date(50,10)
+            if self.volume:
+                self.apply_volume(100,240) 
+            if self.data.all_time_high_flag:
+                self.apply_all_time_high(174,61)
 
-        if inverted:
-            currency_thumbnail = 'currency/' + coin + 'INV.bmp'
+        if self.orientation == 90 or self.orientation == 270:
+            self.logger.debug("Orientation is 90 or 270")
+            self.white_background(self.colour)
+            self.apply_spark(88,40)
+            self.apply_token(0,0)
+            self.apply_price(65) #TODO Change the x,y to what it should be!
+            self.apply_price_change(107,142)
+            self.apply_date(80,10)
+            if self.volume:
+                self.apply_volume(100,210)           
+            if self.data.all_time_high_flag:
+                self.apply_all_time_high(174,61)
+                
+        if self.orientation == 270 or self.orientation == 180:
+                self.image = self.image.rotate(180, expand=True)
+ 
+        if self.inverted:
+            self.image = ImageOps.invert(self.image)
+
+    def white_background(self, colour):
+        if colour:
+            self.image = Image.new('RGB', (320, 240), (255, 255, 255))
         else:
-            currency_thumbnail = 'currency/' + coin + '.bmp'
+            self.image = Image.new('L', (320, 240), 255)
+        self.draw = ImageDraw.Draw(self.image)
+
+
+    def calc_price_change(self):
+        price_change_raw = round((self.data.price_now - self.data.price_stack[0]) / self.data.price_now * 100, 2)
+        if price_change_raw >= 10:
+            self.price_change = str("%+d" % price_change_raw) + "%"
+        else:
+            self.price_change = str("%+.2f" % price_change_raw) + "%"
+
+    def apply_volume(self,x,y):
+        self.draw.text((100, 210), "24h vol : " + self.human_format(self.volume), font=self.font_date, fill=0)
+
+
+    def apply_all_time_high(self,x,y):
+        all_time_high_bitmap = Image.open(os.path.join(self.pic_dir, 'ATH.bmp'))
+        self.image.paste(all_time_high_bitmap, (x, y))
+
+
+    def apply_price_change(self,x,y):
+        self.calc_price_change()
+        self.draw.text((107, 142), str(self.days) + " day : " + self.price_change, font=self.font_date, fill=0)  # Write price change to screen
+    
+    
+    def apply_price(self,y):
+        font_size = 60
+        symbol_string = currency.symbol(self.data.fiat.upper())
+        if self.data.fiat == "jpy" or self.data.fiat == "cny":
+            symbol_string = "¥"
+        d = decimal.Decimal(str(self.data.price_now)).as_tuple().exponent
+        if self.data.price_now > 1000:
+            price_now_string = str(format(int(self.data.price_now), ","))
+        elif self.data.price_now < 1000 and d == -1:
+            price_now_string = "{:.2f}".format(self.data.price_now)
+        else:
+            price_now_string = "{:.3g}".format(self.data.price_now)
+        self.price_now_string = price_now_string
+        self.write_wrapped_lines(self.image, symbol_string + self.price_now_string, font_size, y, 8, 10, "Roboto-Medium")
+
+
+    def apply_date(self,x,y):
+        self.draw.text((x,y), str(time.strftime("%-I:%M %p, s%d %b %Y")), font=self.font_date, fill=0)
+
+    def apply_spark(self,x,y):
+        spark_bitmap = Image.open(os.path.join(self.pic_dir, 'spark.bmp'))
+        self.image.paste(spark_bitmap, (x, y))
+
+    def apply_token(self,x,y):
+        self.logger.debug("self.inverted= " + str(self.inverted))
+        if self.inverted:
+            currency_thumbnail = 'currency/' + self.data.coin + 'INV.bmp'
+        else:
+            currency_thumbnail = 'currency/' + self.data.coin + '.bmp'
+        
+        self.logger.debug(currency_thumbnail)
         
         token_filename = os.path.join(self.pic_dir, currency_thumbnail)
-        spark_bitmap = Image.open(os.path.join(self.pic_dir, 'spark.bmp'))
-        all_time_high_bitmap = Image.open(os.path.join(self.pic_dir, 'ATH.bmp'))
-        
-        #   Check for token image, if there isn't one, get on off coingecko, resize it and pop it on a white background
+         #   Check for token image, if there isn't one, get on off coingecko, resize it and pop it on a white background
         if os.path.isfile(token_filename):
-            logging.debug("Getting token Image from Image directory")
+            self.logger.debug("Getting token Image from Image directory")
             token_image = Image.open(token_filename).convert("RGBA")
         else:
-            logging.debug("Getting token Image from Coingecko")
-            token_image_url = "https://api.coingecko.com/api/v3/coins/" + coin + \
+            self.logger.debug("Getting token Image from Coingecko")
+            token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
                             "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
-            raw_image = requests.get(token_image_url, headers=self.headers).json()
-            token_image = Image.open(requests.get(raw_image['image']['large'], headers=self.headers, stream=True).raw).convert(
+            raw_image = requests.get(token_image_url, headers=slide.HEADERS).json()
+            if raw_image.status_code == requests.codes.ok:
+                self.logger.debug("Got token image OK")
+
+            token_image = Image.open(requests.get(raw_image['image']['large'], headers=slide.HEADERS, stream=True).raw).convert(
                 "RGBA")
             resize = 100, 100
             token_image.thumbnail(resize, Image.ANTIALIAS)
             # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
             # legible on a black display
-            if inverted:
+            if self.inverted:
                 # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
                 token_image = ImageOps.invert(token_image.convert('RGB'))
                 token_image = token_image.convert('RGBA')
@@ -81,56 +178,7 @@ class slide:
             token_image = new_image
             token_image.thumbnail((100, 100), Image.ANTIALIAS)
             token_image.save(token_filename)
-        price_change_raw = round((price_now - price_stack[0]) / price_now * 100, 2)
-        if price_change_raw >= 10:
-            price_change = str("%+d" % price_change_raw) + "%"
-        else:
-            price_change = str("%+.2f" % price_change_raw) + "%"
-        d = decimal.Decimal(str(price_now)).as_tuple().exponent
-        if price_now > 1000:
-            price_now_string = str(format(int(price_now), ","))
-        elif price_now < 1000 and d == -1:
-            price_now_string = "{:.2f}".format(price_now)
-        else:
-            price_now_string = "{:.3g}".format(price_now)
-        # THIS DOES NOT WORK PROPERLY FOR MY SCREEN SIZE
-        if orientation == 0 or orientation == 180:
-            image = Image.new('L', (240, 320), 255)  # 255: clear the image with white
-            draw = ImageDraw.Draw(image)
-            draw.text((110, 80), str(days) + "day :", font=self.font_date, fill=0)
-            draw.text((110, 95), price_change, font=self.font_date, fill=0)
-            self.write_wrapped_lines(image, symbol_string + price_now_string, 40, 65, 8, 10, "Roboto-Medium")
-            image.paste(token_image, (0, 0))
-            image.paste(spark_bitmap, (10, 100))
-            draw.text((10, 10), str(time.strftime("%-I:%M %p, s%d %b %Y")), font=font_date, fill=0)
-            if orientation == 180:
-                image = image.rotate(180, expand=True)
-
-        if orientation == 90 or orientation == 270:
-            if colour:
-                image = Image.new('RGB', (320, 240), (255, 255, 255))  # (255,255,255): clear the image with white
-            else:
-                image = Image.new('L', (320, 240), 255)  # 255: clear the image with white
-            draw = ImageDraw.Draw(image)
-            if volume:
-                draw.text((100, 210), "24h vol : " + self.human_format(volume), font=self.font_date, fill=0)
-            self.write_wrapped_lines(image, symbol_string + price_now_string, 50, 55, 8, 10, "Roboto-Medium")  # Write Price to Screen
-            image.paste(spark_bitmap, (88, 40))  # Write Image to Screen
-            image.paste(token_image, (0, 0))  # Write Token Icon Image to Screen
-            draw.text((107, 142), str(days) + " day : " + price_change, font=self.font_date,
-                    fill=0)  # Write price change to screen
-            if all_time_high_flag:
-                image.paste(all_time_high_bitmap, (174, 61))
-            # Don't show rank for #1 coin, #1 doesn't need to show off
-            if orientation == 270:
-                image = image.rotate(180, expand=True)
-        #       This is a hack to deal with the mirroring that goes on in older waveshare libraries Uncomment line below if needed
-        #       image = ImageOps.mirror(image)
-        #   If the display is inverted, invert the image using ImageOps
-        if inverted:
-            image = ImageOps.invert(image)
-        return image
-
+        self.image.paste(token_image, (x, y))
 
     def human_format(self,num):
         """

@@ -1,7 +1,3 @@
-from PIL import ImageFont
-from PIL import Image
-from PIL import ImageDraw
-
 import os
 import pygame
 import logging
@@ -21,15 +17,18 @@ class display:
      - rotate()         Rotate screen 90 degress clockwise
      - show_error()     Show Error Screen
     """
+
+    
+
     def __init__(self, width=320, height=240):
+
+        self.logger = logging.getLogger("btcticker.display")
 
         os.putenv('SDL_FBDEV', '/dev/fb0')  # Set Output to PiTFT - Could be fb1 if desktop installed
         os.putenv('SDL_AUDIODRIVER', 'dsp')  # Prevent ALSA errors in PyGame
 
         self.pic_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'images')
         self.font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fonts/googlefonts')
-        
-        self.font_date = ImageFont.truetype(os.path.join(self.font_dir, 'PixelSplitter-Bold.ttf'), 11)
 
         mpl.use('Agg')
 
@@ -40,14 +39,17 @@ class display:
         self.lcd = pygame.display.set_mode((self.width, self.height))
         pygame.mouse.set_visible(False)
 
+        self.logger.debug("Pygame Started, now opening config file")
         self.config = params()
         self.slide = slide()
-        self.data = data()
+        self.my_data = data()
 
         self.cryptos = self.config.get_cryptos()
         self.fiats = self.config.get_fiats()
         self.crypto_index = 0
         self.fiat_index = 0
+
+        self.logger.debug("Display Class Initialised, returning...")
 
     def get_orientation(self):
         return self.config['display']['orientation']
@@ -70,17 +72,20 @@ class display:
         """
         Change Pointer to point to next crypto
         """
-        logging.debug(type(self.cryptos))
         if self.crypto_index + 1 >= len(self.cryptos):
             self.crypto_index = 0
         else:
             self.crypto_index += 1
-        self.data.get_pair(self.cryptos[self.crypto_index], self.fiats[self.fiat_index])
+        coin = self.cryptos[self.crypto_index]
+        fiat = self.fiats[self.fiat_index]
+        self.logger.debug("Getting Pairing: " + coin + " " + fiat)
+        self.my_data.fetch_pair(coin, fiat)
 
     def next_slide(self):
         self.next_pairing()
-        image = self.slide.generate_slide(self.data.coin, self.data.fiat, self.data.price_now, self.data.price_stack,  \
-            self.data.all_time_high_flag, self.data. volume, self.config.get_days(), inverted="False", orientation=90, colour="True")
+        self.logger.debug("Pairing Ready, now generating slide")
+        image = self.slide.generate_slide(self.my_data, self.config.get_days(), inverted=self.config.get_inverted(), orientation=self.config.get_orientation(), colour=self.config.get_colour())
+        self.logger.debug("Slide Generated, now updating screen")
         self.update(image)
 
     def bean_a_problem(self, message):

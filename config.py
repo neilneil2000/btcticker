@@ -8,18 +8,21 @@ class params:
     
 
     def __init__(self,filename=config_file):
+        self.logger = logging.getLogger("btcticker.config")
         self.config = {}
         self.read_from_file(filename)
         self.cryptos = self.string_to_list(self.config['ticker']['currency'])
         self.crypto_index = 0
         self.fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
         self.fiat_index = 0
+        self.logger.debug("Config Class Initialized, returning...")
+
         
 
     def read_from_file(self, filename=config_file):
         with open(filename, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
-        logging.debug(self.config)
+        self.logger.debug(self.config)
         self.check_update_frequency()
  
     def write_to_file(self, filename=config_file):
@@ -42,6 +45,16 @@ class params:
 
     def get_exchange(self):
         return self.config['ticker']['exchange']
+
+    def get_orientation(self):
+        return self.config['display']['orientation']
+    
+    def get_colour(self):
+        return self.config['display']['colour']
+
+    def get_inverted(self):
+        return self.config['display']['inverted']
+
 
     def next_item(self,list,index):
         next_index = index + 1

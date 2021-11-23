@@ -34,13 +34,14 @@ def main():
 
     log_level = getattr(logging, args.log.upper(), logging.WARN)
     logging.basicConfig(level = log_level)
-
+    logger = logging.getLogger("btcticker")
     # Set timezone based on ip address
     try:
         os.system("sudo /home/pi/.local/bin/tzupdate")
     except:
-        logging.info("Timezone Not Set")
+        logger.info("Timezone Not Set")
 
+    
     config = params()
 
     update_frequency = config.get_update_frequency()
@@ -49,7 +50,7 @@ def main():
     screen = display()
 
     while not internet():
-        logging.info("Waiting for internet")
+        logger.info("Waiting for internet")
         time.sleep(1)
 
     try:
@@ -64,15 +65,17 @@ def main():
                 time.sleep(0.1)
 
     except IOError as e:
-        logging.error(e)
+        logger.error(e)
+        logger.debug(e.__traceback__.tb_lineno)
         screen.bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
     
-    except Exception as e:
-        logging.error(e)
-        screen.bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
+    # except Exception as e:
+    #     logger.error(e)
+    #     logger.debug("Line: " + str(e.__traceback__.tb_lineno))
+    #     screen.bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
     
     except KeyboardInterrupt:
-        logging.info("ctrl + c:")
+        logger.info("ctrl + c:")
         exit()
 
 
