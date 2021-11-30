@@ -29,7 +29,7 @@ class data:
     def fetch_pair(self,coin,fiat):
         self.coin = coin
         self.fiat = fiat
-        self.refresh()
+        return self.refresh()
     
 
     def refresh(self):
@@ -43,6 +43,8 @@ class data:
         start_time = end_time - 60 * 60 * 24 * self.config.get_days()
 
         self.price_stack = []
+
+        success = False
 
         for x in range(0, data.RETRIES):
             success = self.get_historical_data(start_time, end_time)
@@ -73,6 +75,7 @@ class data:
                     self.logger.warning("Trying again in " + sleep_time + " seconds")
                     time.sleep(sleep_time)  # wait before trying to fetch the data again
                     sleep_time = min(sleep_time*2, 3600) #exponential backoff
+        return success
 
 
     def check_all_time_high(self):
@@ -107,6 +110,7 @@ class data:
         self.logger.debug("Fetching: " + url)
         try:
             gecko_response = requests.get(url, headers=data.HEADERS)
+            self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
             if gecko_response.status_code == 200:
                 connect_ok = True
                 self.logger.debug("Got info from CoinGecko")

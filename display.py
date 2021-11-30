@@ -79,10 +79,11 @@ class display:
         coin = self.cryptos[self.crypto_index]
         fiat = self.fiats[self.fiat_index]
         self.logger.debug("Getting Pairing: " + coin + " " + fiat)
-        self.my_data.fetch_pair(coin, fiat)
+        return self.my_data.fetch_pair(coin, fiat)
 
     def next_slide(self):
-        self.next_pairing()
+        while self.next_pairing() == False:
+            self.next_pairing()
         self.logger.debug("Pairing Ready, now generating slide")
         image = self.slide.generate_slide(self.my_data, self.config.get_days(), inverted=self.config.get_inverted(), orientation=self.config.get_orientation(), colour=self.config.get_colour())
         self.logger.debug("Slide Generated, now updating screen")
