@@ -82,11 +82,11 @@ class Display:
         return self.my_data.fetch_pair(coin, fiat)
 
     def next_slide(self):
-        while self.next_pairing() == False:
-            self.next_pairing()
-        self.logger.debug("Pairing Ready, now generating slide")
-        image = self.slide.generate_slide(self.my_data, self.config.get_days(), inverted=self.config.get_inverted(), orientation=self.config.get_orientation(), colour=self.config.get_colour())
-        self.logger.debug("Slide Generated, now updating screen")
+        if self.next_pairing():
+            self.logger.debug("Pairing Ready, now generating slide")
+            image = self.slide.generate_slide(self.my_data, self.config.get_days(), inverted=self.config.get_inverted(), orientation=self.config.get_orientation(), colour=self.config.get_colour())
+        else:
+            image = self.slide.bean_a_problem("Error Getting Pairing")
         self.update(image)
 
     def bean_a_problem(self, message):

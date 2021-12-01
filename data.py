@@ -49,8 +49,6 @@ class Data:
         for x in range(0, Data.RETRIES):
             success = self.get_historical_data(start_time, end_time)
             if success:
-                self.logger.debug(self.raw_json)
-                self.logger.debug(type(self.raw_json))
                 for time_value in self.raw_json['prices']:
                     self.price_stack.append(float(time_value[1]))
                 time.sleep(0.1)
@@ -58,7 +56,6 @@ class Data:
                 # Get the price
                 success = self.get_live_price()
                 if success:
-                    self.logger.debug(self.raw_json)
                     live_coin = self.raw_json[0]
                     self.price_now = float(live_coin['current_price'])
                 
@@ -67,14 +64,11 @@ class Data:
                     
                     self.all_time_high = live_coin['ath']
                     self.check_all_time_high()
-                    self.logger.debug("Price Now:\t\t" + str(self.price_now))
-                    self.logger.debug("All Time High:\t" + str(self.all_time_high))
-                    self.logger.debug("Volume:\t\t" + str(self.volume))
                     break
-                else:
-                    self.logger.warning("Trying again in " + sleep_time + " seconds")
-                    time.sleep(sleep_time)  # wait before trying to fetch the data again
-                    sleep_time = min(sleep_time*2, 3600) #exponential backoff
+            else:
+                self.logger.warning("Error Getting Data. Trying again in " + sleep_time + " seconds")
+                time.sleep(sleep_time)  # wait before trying to fetch the data again
+                sleep_time = min(sleep_time*2, 3600) #exponential backoff
         return success
 
 
@@ -114,6 +108,7 @@ class Data:
             if gecko_response.status_code == 200:
                 connect_ok = True
                 self.logger.debug("Got info from CoinGecko")
+                self.logger.debug(gecko_response.json())
                 self.raw_json = gecko_response.json()
         except requests.exceptions.RequestException as e:
             self.logger.error("Issue with CoinGecko")
