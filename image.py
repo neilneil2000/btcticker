@@ -10,9 +10,9 @@ import requests
 import decimal
 import time
 
-from sparkline import spark
+from sparkline import Spark
 
-class slide:
+class Slide:
     """
     Class representing a slide for the ticker, showing the logo, graph, price etc
      - next_slide()  Build new slide with new data for next currency in list
@@ -27,7 +27,7 @@ class slide:
         self.font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fonts/googlefonts')
         
         self.font_date = ImageFont.truetype(os.path.join(self.font_dir, 'PixelSplitter-Bold.ttf'), 11)
-        self.my_spark = spark(self.pic_dir)
+        self.my_spark = Spark(self.pic_dir)
 
         self.image = None
         self.draw = None
@@ -159,11 +159,11 @@ class slide:
             self.logger.debug("Getting token Image from Coingecko")
             token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
                             "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
-            raw_image = requests.get(token_image_url, headers=slide.HEADERS).json()
+            raw_image = requests.get(token_image_url, headers=Slide.HEADERS).json()
             if raw_image.status_code == requests.codes.ok:
                 self.logger.debug("Got token image OK")
 
-            token_image = Image.open(requests.get(raw_image['image']['large'], headers=slide.HEADERS, stream=True).raw).convert(
+            token_image = Image.open(requests.get(raw_image['image']['large'], headers=Slide.HEADERS, stream=True).raw).convert(
                 "RGBA")
             resize = 100, 100
             token_image.thumbnail(resize, Image.ANTIALIAS)

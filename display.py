@@ -4,11 +4,11 @@ import logging
 
 import matplotlib as mpl
 
-from config import params 
-from image import slide
-from data import data
+from config import Params 
+from image import Slide
+from data import Data
 
-class display:
+class Display:
     """
     Top Level Class Providing the Following Functions:
      - refresh_slide()  Reload Existing Image - to account for any changes in settings since last load
@@ -40,9 +40,9 @@ class display:
         pygame.mouse.set_visible(False)
 
         self.logger.debug("Pygame Started, now opening config file")
-        self.config = params()
-        self.slide = slide()
-        self.my_data = data()
+        self.config = Params()
+        self.slide = Slide()
+        self.my_data = Data()
 
         self.cryptos = self.config.get_cryptos()
         self.fiats = self.config.get_fiats()
@@ -56,11 +56,11 @@ class display:
 
     def set_orientation(self,angle):
         self.config['display']['orientation'] = angle
-        slide.refresh()
+        Slide.refresh()
 
     def toggle_invert(self):
         self.config['display']['inverted'] = not self.config['display']['inverted']
-        slide.refresh()
+        Slide.refresh()
 
     def update(self, img):
         img = img.convert('RGB')

@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 from PIL import Image
 
-class spark:
+class Spark:
     """
     Class representing the Small Graph (aka Sparkline)
     """

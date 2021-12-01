@@ -5,8 +5,8 @@ import socket
 import logging
 import argparse
 
-from display import display
-from config import params
+from display import Display
+from config import Params
 
 def internet(hostname="google.com"):
     """
@@ -42,12 +42,12 @@ def main():
         logger.info("Timezone Not Set")
 
     
-    config = params()
+    config = Params()
 
     update_frequency = config.get_update_frequency()
     last_fetch_time = time.time() - update_frequency #Force first update
 
-    screen = display()
+    screen = Display()
 
     while not internet():
         logger.info("Waiting for internet")

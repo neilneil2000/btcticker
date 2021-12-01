@@ -2,9 +2,9 @@ import requests
 import logging
 import time
 
-from config import params
+from config import Params
 
-class data:
+class Data:
 
     HEADERS = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
                      Chrome/39.0.2171.95 Safari/537.36'}
@@ -14,7 +14,7 @@ class data:
 
     def __init__(self):        
         self.logger = logging.getLogger("btcticker.display.data")
-        self.config = params()
+        self.config = Params()
 
         self.price_stack = []
         self.price_now = None
@@ -36,7 +36,7 @@ class data:
         """
         Get Data From Coin Gecko
         """
-        sleep_time = data.SLEEP_TIME
+        sleep_time = Data.SLEEP_TIME
 
         self.logger.info("Getting Data")
         end_time = int(time.time())
@@ -46,7 +46,7 @@ class data:
 
         success = False
 
-        for x in range(0, data.RETRIES):
+        for x in range(0, Data.RETRIES):
             success = self.get_historical_data(start_time, end_time)
             if success:
                 self.logger.debug(self.raw_json)
@@ -109,7 +109,7 @@ class data:
         connect_ok = False
         self.logger.debug("Fetching: " + url)
         try:
-            gecko_response = requests.get(url, headers=data.HEADERS)
+            gecko_response = requests.get(url, headers=Data.HEADERS)
             self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
             if gecko_response.status_code == 200:
                 connect_ok = True

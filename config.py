@@ -2,7 +2,7 @@ import yaml
 import os
 import logging
 
-class params:
+class Params:
     '''Config Class'''
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.yaml')
     
