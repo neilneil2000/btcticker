@@ -151,35 +151,68 @@ class Slide:
         self.logger.debug(currency_thumbnail)
         
         token_filename = os.path.join(self.pic_dir, currency_thumbnail)
-         #   Check for token image, if there isn't one, get on off coingecko, resize it and pop it on a white background
+
         if os.path.isfile(token_filename):
-            self.logger.debug("Getting token Image from Image directory")
             token_image = Image.open(token_filename).convert("RGBA")
         else:
-            self.logger.debug("Getting token Image from Coingecko")
-            token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
-                            "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
-            raw_image = requests.get(token_image_url, headers=Slide.HEADERS)
-            if raw_image.status_code == requests.codes.ok:
-                self.logger.debug("Got token image OK")
-            raw_image = raw_image.json()
-
-            token_image = Image.open(requests.get(raw_image['image']['large'], headers=Slide.HEADERS, stream=True).raw).convert(
-                "RGBA")
-            resize = 100, 100
-            token_image.thumbnail(resize, Image.ANTIALIAS)
-            # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
-            # legible on a black display
-            if self.inverted:
-                # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
-                token_image = ImageOps.invert(token_image.convert('RGB'))
-                token_image = token_image.convert('RGBA')
-            new_image = Image.new("RGBA", (120, 120), "WHITE")  # Create a white rgba background with a 10 pixel border
-            new_image.paste(token_image, (10, 10), token_image)
-            token_image = new_image
-            token_image.thumbnail((100, 100), Image.ANTIALIAS)
-            token_image.save(token_filename)
+            token_image = self.fetch_token_image(token_filename)
         self.image.paste(token_image, (x, y))
+
+    def fetch_token_image(self, token_filename):
+        self.logger.debug("Getting token Image from Coingecko")
+        token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
+                        "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
+
+        if self.get_gecko(token_image_url):
+            self.logger.debug("Got token info OK")
+        else:
+            self.logger.info("Failed to get token info...unhandled exception")
+        
+        if self.get_gecko(self.raw_json['image']['large'],stream=True):
+            self.logger.debug("Got token image")
+        else:
+            self.logger.info("Failed to get token image...unhandled exception")
+
+        self.token_image = Image.open(self.raw_stream).convert("RGBA")
+
+        resize = 100, 100
+        self.token_image.thumbnail(resize, Image.ANTIALIAS)
+        # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
+        # legible on a black display
+        if self.inverted:
+            # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
+            token_image = ImageOps.invert(self.token_image.convert('RGB'))
+            token_image = token_image.convert('RGBA')
+        new_image = Image.new("RGBA", (120, 120), "WHITE")  # Create a white rgba background with a 10 pixel border
+        new_image.paste(token_image, (10, 10), token_image)
+        token_image = new_image
+        token_image.thumbnail((100, 100), Image.ANTIALIAS)
+        token_image.save(token_filename)
+        return token_image
+
+    def get_gecko(self,url,stream=False):
+        """
+        Get Info From CoinGecko
+        Returns True on success, false on failure
+        """
+        connect_ok = False
+        self.logger.debug("Fetching: " + url)
+        try:
+            gecko_response = requests.get(url, headers=Slide.HEADERS, stream=stream)
+            self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
+            if gecko_response.status_code == requests.codes.ok:
+                connect_ok = True
+                self.logger.debug("Got info from CoinGecko")
+                if not stream:
+                    self.logger.debug(gecko_response.json())
+                    self.raw_json = gecko_response.json()
+                else:
+                    self.raw_stream = gecko_response.raw
+        except requests.exceptions.RequestException as e:
+            self.logger.error("Issue with CoinGecko")
+            connect_ok = False
+            self.raw_json = {}
+        return connect_ok
 
     def human_format(self,num):
         """

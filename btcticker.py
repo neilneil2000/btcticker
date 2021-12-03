@@ -5,7 +5,6 @@ import socket
 import logging
 import argparse
 
-
 from display import Display
 from config import Params
 from buttons import Buttons

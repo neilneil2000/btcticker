@@ -105,7 +105,7 @@ class Data:
         try:
             gecko_response = requests.get(url, headers=Data.HEADERS)
             self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
-            if gecko_response.status_code == 200:
+            if gecko_response.status_code == requests.codes.ok:
                 connect_ok = True
                 self.logger.debug("Got info from CoinGecko")
                 self.logger.debug(gecko_response.json())
