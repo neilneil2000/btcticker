@@ -45,8 +45,7 @@ def main():
     
     config = Params()
 
-    update_frequency = config.get_update_frequency()
-    last_fetch_time = time.time() - update_frequency #Force first update
+    last_fetch_time = time.time() - config.update_frequency #Force first update
 
     screen = Display()
 
@@ -57,9 +56,9 @@ def main():
         time.sleep(1)
 
     try:
-        if config.get_cycle():
+        if config.cycle:
             while True:
-                if (time.time() - last_fetch_time > update_frequency):
+                if (time.time() - last_fetch_time > config.update_frequency):
                     screen.next_slide()
                     last_fetch_time = time.time()
                 time.sleep(0.1)

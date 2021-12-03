@@ -11,14 +11,14 @@ import decimal
 import time
 
 from sparkline import Spark
+from gecko import GeckoConnection
 
 class Slide:
     """
     Class representing a slide for the ticker, showing the logo, graph, price etc
      - next_slide()  Build new slide with new data for next currency in list
     """
-    HEADERS = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
-                 Chrome/39.0.2171.95 Safari/537.36'}
+
     dir_name = os.path.dirname(__file__)
 
     def __init__(self):
@@ -163,12 +163,12 @@ class Slide:
         token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
                         "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
 
-        if self.get_gecko(token_image_url):
+        if GeckoConnection.fetch_data(token_image_url):
             self.logger.debug("Got token info OK")
         else:
             self.logger.info("Failed to get token info...unhandled exception")
         
-        if self.get_gecko(self.raw_json['image']['large'],stream=True):
+        if GeckoConnection.fetch_data(self.raw_json['image']['large'],stream=True):
             self.logger.debug("Got token image")
         else:
             self.logger.info("Failed to get token image...unhandled exception")
@@ -190,29 +190,6 @@ class Slide:
         token_image.save(token_filename)
         return token_image
 
-    def get_gecko(self,url,stream=False):
-        """
-        Get Info From CoinGecko
-        Returns True on success, false on failure
-        """
-        connect_ok = False
-        self.logger.debug("Fetching: " + url)
-        try:
-            gecko_response = requests.get(url, headers=Slide.HEADERS, stream=stream)
-            self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
-            if gecko_response.status_code == requests.codes.ok:
-                connect_ok = True
-                self.logger.debug("Got info from CoinGecko")
-                if not stream:
-                    self.logger.debug(gecko_response.json())
-                    self.raw_json = gecko_response.json()
-                else:
-                    self.raw_stream = gecko_response.raw
-        except requests.exceptions.RequestException as e:
-            self.logger.error("Issue with CoinGecko")
-            connect_ok = False
-            self.raw_json = {}
-        return connect_ok
 
     def human_format(self,num):
         """

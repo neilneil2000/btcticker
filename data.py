@@ -3,11 +3,9 @@ import logging
 import time
 
 from config import Params
+from gecko import GeckoConnection
 
 class Data:
-
-    HEADERS = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) \
-                     Chrome/39.0.2171.95 Safari/537.36'}
 
     SLEEP_TIME = 10
     RETRIES = 5
@@ -47,14 +45,14 @@ class Data:
         success = False
 
         for x in range(0, Data.RETRIES):
-            success = self.get_historical_data(start_time, end_time)
+            success = self.fetch_historical_data(start_time, end_time)
             if success:
                 for time_value in self.raw_json['prices']:
                     self.price_stack.append(float(time_value[1]))
                 time.sleep(0.1)
             
                 # Get the price
-                success = self.get_live_price()
+                success = self.fetch_live_price()
                 if success:
                     live_coin = self.raw_json[0]
                     self.price_now = float(live_coin['current_price'])
@@ -79,39 +77,13 @@ class Data:
             self.all_time_high_flag = False
 
 
-    def get_price_stack(self):
-        return self.price_stack
-
-
-    def get_live_price(self):
+    def fetch_live_price(self):
         url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=" + self.fiat + "&ids=" + self.coin
-        return self.get_gecko(url)
+        return GeckoConnection.fetch_data(url)
         
 
-    def get_historical_data(self,start_time, end_time):
+    def fetch_historical_data(self,start_time, end_time):
         url = "https://api.coingecko.com/api/v3/coins/" + self.coin + \
                     "/market_chart/range?vs_currency=" + self.fiat + "&from=" + str(start_time) + \
                     "&to=" + str(end_time)
-        return self.get_gecko(url)
-    
-
-    def get_gecko(self,url):
-        """
-        Get Info From CoinGecko
-        Returns True on success, false on failure
-        """
-        connect_ok = False
-        self.logger.debug("Fetching: " + url)
-        try:
-            gecko_response = requests.get(url, headers=Data.HEADERS)
-            self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
-            if gecko_response.status_code == requests.codes.ok:
-                connect_ok = True
-                self.logger.debug("Got info from CoinGecko")
-                self.logger.debug(gecko_response.json())
-                self.raw_json = gecko_response.json()
-        except requests.exceptions.RequestException as e:
-            self.logger.error("Issue with CoinGecko")
-            connect_ok = False
-            self.raw_json = {}
-        return connect_ok
+        return GeckoConnection.fetch_data(url)

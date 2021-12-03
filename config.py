@@ -15,43 +15,29 @@ class Params:
         self.crypto_index = 0
         self.fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
         self.fiat_index = 0
-        
+        if self.config['display']['cycle']:
+            self.cycle = True
+        else:
+            self.cycle = False
+        self.days = int(self.config['ticker']['sparklinedays'])
+        self.exchange =  self.config['ticker']['exchange']
+        self.orientation =  self.config['display']['orientation']
+        self.colour = self.config['display']['colour']
+        self.inverted = self.config['display']['inverted']
+        self.check_update_frequency()
+        self.update_frequency = self.config['ticker']['updatefrequency']
+
 
     def read_from_file(self, filename=config_file):
         with open(filename, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
         self.logger.debug(self.config)
         self.check_update_frequency()
- 
+
+
     def write_to_file(self, filename=config_file):
         with open(filename, 'w') as f:
             yaml.dump(self.config, f)
-
-    def get_cycle(self):
-        if self.config['display']['cycle']:
-            return True
-        return False
-
-    def get_cryptos(self):
-        return self.cryptos
-
-    def get_fiats(self):
-        return self.fiats
-
-    def get_days(self):
-        return int(self.config['ticker']['sparklinedays'])
-
-    def get_exchange(self):
-        return self.config['ticker']['exchange']
-
-    def get_orientation(self):
-        return self.config['display']['orientation']
-    
-    def get_colour(self):
-        return self.config['display']['colour']
-
-    def get_inverted(self):
-        return self.config['display']['inverted']
 
 
     def next_item(self,list,index):
@@ -60,25 +46,26 @@ class Params:
             next_index = 0
         return next_index
 
+
     def next_crypto(self):
         self.crypto_index = self.next_item(self.cryptos, self.crypto_index)
-    
+
+
     def next_fiat(self):
         self.fiat_index = self.next_item(self.fiats, self.fiat_index)
     
-    def get_update_frequency(self):
-        self.check_update_frequency()
-        return self.config['ticker']['updatefrequency']
 
     def check_update_frequency(self):
         # Quick Sanity check on update frequency
         if float(self.config['ticker']['updatefrequency']) < 5:
             self.config['ticker']['updatefrequency'] = 5.0
 
+
     def get_coin_and_fiat(self):        
         cryptos = self.string_to_list(self.config['ticker']['currency'])
         fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
         return cryptos[0], fiats[0]
+
 
     def string_to_list(self,string):
         list = string.split(",")

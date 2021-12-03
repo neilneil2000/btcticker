@@ -44,8 +44,8 @@ class Display:
         self.slide = Slide()
         self.my_data = Data()
 
-        self.cryptos = self.config.get_cryptos()
-        self.fiats = self.config.get_fiats()
+        self.cryptos = self.config.cryptos
+        self.fiats = self.config.fiats
         self.crypto_index = 0
         self.fiat_index = 0
 
