@@ -66,7 +66,7 @@ class Data:
                     self.check_all_time_high()
                     break
             else:
-                self.logger.warning("Error Getting Data. Trying again in " + sleep_time + " seconds")
+                self.logger.warning("Error Getting Data. Trying again in " + str(sleep_time) + " seconds")
                 time.sleep(sleep_time)  # wait before trying to fetch the data again
                 sleep_time = min(sleep_time*2, 3600) #exponential backoff
         return success

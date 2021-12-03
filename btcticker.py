@@ -7,6 +7,8 @@ import argparse
 
 from display import Display
 from config import Params
+from buttons import Buttons
+
 
 def internet(hostname="google.com"):
     """
@@ -40,7 +42,6 @@ def main():
         os.system("sudo /home/pi/.local/bin/tzupdate")
     except:
         logger.info("Timezone Not Set")
-
     
     config = Params()
 
@@ -48,6 +49,8 @@ def main():
     last_fetch_time = time.time() - update_frequency #Force first update
 
     screen = Display()
+
+    my_buttons = Buttons()
 
     while not internet():
         logger.info("Waiting for internet")
@@ -69,14 +72,16 @@ def main():
         logger.debug(e.__traceback__.tb_lineno)
         screen.bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
     
-    # except Exception as e:
-    #     logger.error(e)
-    #     logger.debug("Line: " + str(e.__traceback__.tb_lineno))
-    #     screen.bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
+    except Exception as e:
+        logger.error(e)
+        logger.debug("Line: " + str(e.__traceback__.tb_lineno))
+        screen.bean_a_problem(str(e) + " Line: " + str(e.__traceback__.tb_lineno))
     
     except KeyboardInterrupt:
         logger.info("ctrl + c:")
         exit()
+
+
 
 
 if __name__ == '__main__':

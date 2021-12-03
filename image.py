@@ -75,7 +75,7 @@ class Slide:
             self.white_background(self.colour)
             self.apply_spark(88,40)
             self.apply_token(0,0)
-            self.apply_price(65) #TODO Change the x,y to what it should be!
+            self.apply_price(65)
             self.apply_price_change(107,142)
             self.apply_date(80,10)
             if self.volume:
@@ -159,9 +159,10 @@ class Slide:
             self.logger.debug("Getting token Image from Coingecko")
             token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
                             "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
-            raw_image = requests.get(token_image_url, headers=Slide.HEADERS).json()
+            raw_image = requests.get(token_image_url, headers=Slide.HEADERS)
             if raw_image.status_code == requests.codes.ok:
                 self.logger.debug("Got token image OK")
+            raw_image = raw_image.json()
 
             token_image = Image.open(requests.get(raw_image['image']['large'], headers=Slide.HEADERS, stream=True).raw).convert(
                 "RGBA")

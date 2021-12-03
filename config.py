@@ -15,8 +15,6 @@ class Params:
         self.crypto_index = 0
         self.fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
         self.fiat_index = 0
-        self.logger.debug("Config Class Initialized, returning...")
-
         
 
     def read_from_file(self, filename=config_file):
