@@ -61,48 +61,6 @@ Install the required Python3 modules
 ```
 sudo python3 -m pip install -r requirements.txt
 ```
-
-## Add Autostart
-
-```
-cat <<EOF | sudo tee /etc/systemd/system/btcticker.service
-[Unit]
-Description=btcticker
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/python3 -u /home/pi/btcticker/btcticker.py
-WorkingDirectory=/home/pi/btcticker/
-StandardOutput=inherit
-StandardError=inherit
-Restart=always
-User=pi
-
-[Install]
-WantedBy=multi-user.target
-EOF
-```
-Now, simply enable the service you just made and reboot
-```  
-sudo systemctl enable btcticker.service
-sudo systemctl start btcticker.service
-
-sudo reboot
-```
-# Control via buttons
-
-This only applies if you are going to control configuration via the buttons on the board.
-
-The ePaper is slow. There is a lag of a few seconds between button press and a change to the display. 
-
-Here's what each of the buttons do:
-- Button 1: Cycle through the cryptocurrencies listed in config.yaml
-- Button 2: Rotate Display -90 degrees
-- Button 3: Invert Display
-- Button 4: Cycle through the fiat currencies listed in config.yaml
-
-Update frequency can be changed in the configuration file (default is 300 seconds).
-
 # Configuration vi config file
 
 The file `config.yaml` (the copy of `config_example.yaml` you made earlier) contains a number of options that may be tweaked:
