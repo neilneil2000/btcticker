@@ -122,16 +122,20 @@ class Slide:
         symbol_string = currency.symbol(self.data.fiat.upper())
         if self.data.fiat == "jpy" or self.data.fiat == "cny":
             symbol_string = "¥"
-        d = decimal.Decimal(str(self.data.price_now)).as_tuple().exponent
-        if self.data.price_now > 1000:
-            price_now_string = str(format(int(self.data.price_now), ","))
-        elif self.data.price_now < 1000 and d == -1:
-            price_now_string = "{:.2f}".format(self.data.price_now)
-        else:
-            price_now_string = "{:.3g}".format(self.data.price_now)
-        self.price_now_string = price_now_string
+        self.format_price()
         self.write_wrapped_lines(self.image, symbol_string + self.price_now_string, font_size, y, 8, 10, "Roboto-Medium")
 
+    def format_price(self):
+        d = decimal.Decimal(str(self.data.price_now)).as_tuple().exponent
+        self.logger.debug("price_now = " + str(self.data.price_now) + " d = " + str(d))
+        if self.data.price_now >= 1000:
+            price_now_string = str(format(int(self.data.price_now), ",")) # If > £1000 ignore pence and add comma seperator
+        elif self.data.price_now < 1:
+            price_now_string = "{:.3g}".format(self.data.price_now) #If less than £1 then use 3sig figs
+        else:
+            price_now_string = "{:.2f}".format(self.data.price_now) # If between £1 and £1000 then show £XX.xx
+        self.price_now_string = price_now_string
+        self.logger.debug("price_now_string = " + str(self.price_now_string))
 
     def apply_date(self,x,y):
         self.draw.text((x,y), str(time.strftime("%-I:%M %p, s%d %b %Y")), font=self.font_date, fill=0)
