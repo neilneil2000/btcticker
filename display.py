@@ -47,8 +47,8 @@ class Display:
 
         self.cryptos = self.config.cryptos
         self.fiats = self.config.fiats
-        self.crypto_index = 0
-        self.fiat_index = 0
+        self.crypto_index = len(self.cryptos)-1
+        self.fiat_index = len(self.fiats)-1
 
         self.logger.debug("Display Class Initialised, returning...")
 

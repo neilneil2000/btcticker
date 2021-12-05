@@ -35,7 +35,7 @@ class Data:
         """
         sleep_time = Data.SLEEP_TIME
 
-        self.logger.info("Getting Data")
+        self.logger.debug("Getting Data")
         end_time = int(time.time())
         start_time = end_time - 60 * 60 * 24 * self.config.days
 

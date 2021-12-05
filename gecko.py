@@ -19,7 +19,7 @@ class GeckoConnection:
         self.logger.debug("Fetching: " + url)
         try:
             gecko_response = requests.get(url, headers=GeckoConnection.HEADERS, stream=stream)
-            self.logger.info("Data Requested. Status Code:" + str(gecko_response.status_code))
+            self.logger.debug("Data Requested. Status Code:" + str(gecko_response.status_code))
             if gecko_response.status_code == requests.codes.ok:
                 connect_ok = True
                 self.logger.debug("Got info from CoinGecko")

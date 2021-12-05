@@ -36,7 +36,7 @@ class Slide:
         self.data = None
         self.price_now_string = ""
         self.days = 0
-
+        self.gecko = GeckoConnection()
         self.logger.debug("Slide class initialised, returning...")
         
     def generate_slide(self, data, days, inverted, orientation, colour):
@@ -162,17 +162,17 @@ class Slide:
         token_image_url = "https://api.coingecko.com/api/v3/coins/" + self.data.coin + \
                         "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
 
-        if GeckoConnection.fetch_data(token_image_url):
+        if self.gecko.fetch_data(token_image_url):
             self.logger.debug("Got token info OK")
         else:
             self.logger.info("Failed to get token info...unhandled exception")
         
-        if GeckoConnection.fetch_data(self.raw_json['image']['large'],stream=True):
+        if self.gecko.fetch_data(self.gecko.raw_json['image']['large'],stream=True):
             self.logger.debug("Got token image")
         else:
             self.logger.info("Failed to get token image...unhandled exception")
 
-        self.token_image = Image.open(self.raw_stream).convert("RGBA")
+        self.token_image = Image.open(self.gecko.raw_stream).convert("RGBA")
 
         resize = 100, 100
         self.token_image.thumbnail(resize, Image.ANTIALIAS)

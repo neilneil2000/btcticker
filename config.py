@@ -12,8 +12,6 @@ class Params:
         self.config = {}
         self.read_from_file(filename)
         self.parse_config_file()
-        self.crypto_index = 0
-        self.fiat_index = 0
 
 
     def parse_config_file(self):
@@ -48,14 +46,6 @@ class Params:
         if next_index >= list.len():
             next_index = 0
         return next_index
-
-
-    def next_crypto(self):
-        self.crypto_index = self.next_item(self.cryptos, self.crypto_index)
-
-
-    def next_fiat(self):
-        self.fiat_index = self.next_item(self.fiats, self.fiat_index)
 
 
     def string_to_list(self,string):
