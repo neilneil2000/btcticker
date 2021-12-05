@@ -76,7 +76,7 @@ class Slide:
             self.apply_token(0,0)
             self.apply_price(65)
             self.apply_price_change(107,142)
-            self.apply_date(80,10)
+            self.apply_date(100,10)
             if self.volume:
                 self.apply_volume(100,210)           
             if self.data.all_time_high_flag:
