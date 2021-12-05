@@ -49,16 +49,17 @@ def main():
 
     screen = Display()
 
-    my_buttons = Buttons()
+    #my_buttons = Buttons()
 
     while not internet():
         logger.info("Waiting for internet")
         time.sleep(1)
-
+    logger.debug("Entering Main Loop. Config.cycle= " +str(config.cycle))
     try:
         if config.cycle:
             while True:
                 if (time.time() - last_fetch_time > config.update_frequency):
+                    logger.debug("Fetching next slide...")
                     screen.next_slide()
                     last_fetch_time = time.time()
                 time.sleep(0.1)

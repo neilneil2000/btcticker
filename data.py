@@ -1,4 +1,3 @@
-import requests
 import logging
 import time
 
@@ -21,7 +20,7 @@ class Data:
         self.fiat = ""
         self.all_time_high_flag = False
 
-        self.raw_json = {}
+        self.gecko = GeckoConnection()
 
 
     def fetch_pair(self,coin,fiat):
@@ -38,7 +37,7 @@ class Data:
 
         self.logger.info("Getting Data")
         end_time = int(time.time())
-        start_time = end_time - 60 * 60 * 24 * self.config.get_days()
+        start_time = end_time - 60 * 60 * 24 * self.config.days
 
         self.price_stack = []
 
@@ -47,14 +46,14 @@ class Data:
         for x in range(0, Data.RETRIES):
             success = self.fetch_historical_data(start_time, end_time)
             if success:
-                for time_value in self.raw_json['prices']:
+                for time_value in self.gecko.raw_json['prices']:
                     self.price_stack.append(float(time_value[1]))
                 time.sleep(0.1)
             
                 # Get the price
                 success = self.fetch_live_price()
                 if success:
-                    live_coin = self.raw_json[0]
+                    live_coin = self.gecko.raw_json[0]
                     self.price_now = float(live_coin['current_price'])
                 
                     self.volume = float(live_coin['total_volume'])
@@ -79,11 +78,11 @@ class Data:
 
     def fetch_live_price(self):
         url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=" + self.fiat + "&ids=" + self.coin
-        return GeckoConnection.fetch_data(url)
+        return self.gecko.fetch_data(url)
         
 
     def fetch_historical_data(self,start_time, end_time):
         url = "https://api.coingecko.com/api/v3/coins/" + self.coin + \
                     "/market_chart/range?vs_currency=" + self.fiat + "&from=" + str(start_time) + \
                     "&to=" + str(end_time)
-        return GeckoConnection.fetch_data(url)
+        return self.gecko.fetch_data(url)

@@ -19,7 +19,6 @@ class Display:
     """
 
     
-
     def __init__(self, width=320, height=240):
 
         self.logger = logging.getLogger("btcticker.display")
@@ -36,7 +35,9 @@ class Display:
         self.height = height
 
         pygame.init()
+        self.logger.debug("Pygame Initialised. Setting display width:" + str(self.width) + " Height: " + str(self.height))
         self.lcd = pygame.display.set_mode((self.width, self.height))
+        self.logger.debug("Pygame Display Mode Set")
         pygame.mouse.set_visible(False)
 
         self.logger.debug("Pygame Started, now opening config file")
@@ -50,6 +51,9 @@ class Display:
         self.fiat_index = 0
 
         self.logger.debug("Display Class Initialised, returning...")
+
+    def __del__(self):
+        pygame.quit()
 
     def get_orientation(self):
         return self.config['display']['orientation']
@@ -84,7 +88,7 @@ class Display:
     def next_slide(self):
         if self.next_pairing():
             self.logger.debug("Pairing Ready, now generating slide")
-            image = self.slide.generate_slide(self.my_data, self.config.get_days(), inverted=self.config.get_inverted(), orientation=self.config.get_orientation(), colour=self.config.get_colour())
+            image = self.slide.generate_slide(self.my_data, self.config.days, inverted=self.config.inverted, orientation=self.config.orientation, colour=self.config.colour)
         else:
             image = self.slide.bean_a_problem("Error Getting Pairing")
         self.update(image)

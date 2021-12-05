@@ -1,4 +1,5 @@
 import requests
+import logging
 
 class GeckoConnection:
 
@@ -6,7 +7,8 @@ class GeckoConnection:
                  Chrome/39.0.2171.95 Safari/537.36'}
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger("btcticker.gecko")
+        self.raw_json = {}
 
     def fetch_data(self,url,stream=False):
         """

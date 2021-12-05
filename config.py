@@ -11,28 +11,31 @@ class Params:
         self.logger = logging.getLogger("btcticker.config")
         self.config = {}
         self.read_from_file(filename)
-        self.cryptos = self.string_to_list(self.config['ticker']['currency'])
+        self.parse_config_file()
         self.crypto_index = 0
-        self.fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
         self.fiat_index = 0
-        if self.config['display']['cycle']:
+
+
+    def parse_config_file(self):
+        self.cryptos = self.string_to_list(self.config['ticker']['currency'])
+        self.fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
+        if self.config['display']['cycle'] == "True":
             self.cycle = True
         else:
             self.cycle = False
+        self.cycle = self.config['display']['cycle']
         self.days = int(self.config['ticker']['sparklinedays'])
         self.exchange =  self.config['ticker']['exchange']
         self.orientation =  self.config['display']['orientation']
         self.colour = self.config['display']['colour']
         self.inverted = self.config['display']['inverted']
-        self.check_update_frequency()
-        self.update_frequency = self.config['ticker']['updatefrequency']
+        self.update_frequency = max(5.0,float(self.config['ticker']['updatefrequency']))
 
 
     def read_from_file(self, filename=config_file):
         with open(filename, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
         self.logger.debug(self.config)
-        self.check_update_frequency()
 
 
     def write_to_file(self, filename=config_file):
@@ -53,18 +56,6 @@ class Params:
 
     def next_fiat(self):
         self.fiat_index = self.next_item(self.fiats, self.fiat_index)
-    
-
-    def check_update_frequency(self):
-        # Quick Sanity check on update frequency
-        if float(self.config['ticker']['updatefrequency']) < 5:
-            self.config['ticker']['updatefrequency'] = 5.0
-
-
-    def get_coin_and_fiat(self):        
-        cryptos = self.string_to_list(self.config['ticker']['currency'])
-        fiats = self.string_to_list(self.config['ticker']['fiatcurrency'])
-        return cryptos[0], fiats[0]
 
 
     def string_to_list(self,string):

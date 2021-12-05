@@ -6,7 +6,6 @@ import os
 import textwrap
 import currency
 import logging
-import requests
 import decimal
 import time
 
