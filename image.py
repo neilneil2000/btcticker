@@ -210,12 +210,12 @@ class Slide:
             + "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
         )
 
-        if self.gecko.fetch_data(token_image_url):
+        if self.gecko.fetch(token_image_url):
             self.logger.debug("Got token info OK")
         else:
             self.logger.info("Failed to get token info...unhandled exception")
 
-        if self.gecko.fetch_data(self.gecko.raw_json["image"]["large"], stream=True):
+        if self.gecko.fetch(self.gecko.raw_json["image"]["large"], stream=True):
             self.logger.debug("Got token image")
         else:
             self.logger.info("Failed to get token image...unhandled exception")

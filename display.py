@@ -6,7 +6,7 @@ import matplotlib as mpl
 
 from config import Params
 from image import Slide
-from data import Data
+from data import CoinData
 
 
 class Display:
@@ -53,7 +53,7 @@ class Display:
         self.logger.debug("Pygame Started, now opening config file")
         self.config = Params()
         self.slide = Slide()
-        self.my_data = Data()
+        self.my_data = DataManager()
 
         self.cryptos = self.config.cryptos
         self.fiats = self.config.fiats
