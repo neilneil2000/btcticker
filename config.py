@@ -21,16 +21,16 @@ class Params:
         """Parse YAML Config file and store attributes"""
         self.cryptos = self.string_to_list(self.config["ticker"]["currency"])
         self.fiats = self.string_to_list(self.config["ticker"]["fiatcurrency"])
-        if self.config["display"]["cycle"] == "True":
-            self.cycle = True
-        else:
-            self.cycle = False
         self.cycle = self.config["display"]["cycle"]
-        self.days = int(self.config["ticker"]["sparklinedays"])
-        self.exchange = self.config["ticker"]["exchange"]
         self.orientation = self.config["display"]["orientation"]
         self.colour = self.config["display"]["colour"]
         self.inverted = self.config["display"]["inverted"]
+        self.show_rank = self.config["display"]["showrank"]
+        self.show_volume = self.config["display"]["showvolume"]
+
+        self.days = int(self.config["ticker"]["sparklinedays"])
+        self.exchange = self.config["ticker"]["exchange"]
+
         self.update_frequency = max(
             5.0, float(self.config["ticker"]["updatefrequency"])
         )

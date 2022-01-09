@@ -23,22 +23,18 @@ class DataManager:
         self._coin_pointer: int = 0
         self._fiat_pointer: int = 0
 
-        self.data: CoinData = None
+        self.data: CoinData = CoinData()
         self.gecko: GeckoConnection = GeckoConnection()
 
     @property
     def coin(self) -> str:
         """Returns the current coin"""
-        if self._coin_pointer:
-            return self.coins[self._coin_pointer]
-        return None
+        return self.coins[self._coin_pointer]
 
     @property
     def fiat(self) -> str:
         """Returns the current fiat"""
-        if self._fiat_pointer:
-            return self.fiats[self._fiat_pointer]
-        return None
+        return self.fiats[self._fiat_pointer]
 
     @property
     def data_period_seconds(self):
@@ -61,7 +57,8 @@ class DataManager:
 
     def process_historical_data(self) -> None:
         """Process data response from InfoProvider"""
-        _, self.data._price_stack = zip(*self.gecko.response.json()["prices"])
+        _, prices = zip(*self.gecko.response.json()["prices"])
+        self.data.price_stack = list(prices)
 
     def process_live_data(self) -> None:
         """Store Live Price Data in CoinData Object"""
@@ -78,24 +75,27 @@ class DataManager:
         self.data.all_time_high = None
         self.data.volume = None
 
-    def refresh(self) -> bool:
+    def refresh(self) -> CoinData:
         """
         Refresh Data From Coin Gecko
         """
         # self.clear_data()
+        self.data.coin = self.coin
+        self.data.fiat = self.fiat
+        self.data.data_period_days = self.data_period_days
         self.logger.debug("Getting Data")
         end_time = int(time.time())
         start_time = end_time - self.data_period_seconds
 
         if not self.fetch_historical_data(start_time, end_time):
-            return False
+            return
         self.process_historical_data()
 
         if not self.fetch_live_price():
-            return False
+            return
         self.process_live_data()
 
-        return True
+        return self.data
 
     @property
     def all_time_high_flag(self):

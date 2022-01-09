@@ -5,7 +5,7 @@ from matplotlib import pyplot
 from PIL import Image
 
 
-class Spark:
+class SparkLine:
     """
     Class representing the Small Graph (aka Sparkline)
     """

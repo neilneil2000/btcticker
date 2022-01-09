@@ -1,246 +1,247 @@
 import os
 import textwrap
-import decimal
 import time
 import logging
+
+from typing import Tuple
 import currency
+from PIL import ImageFont, Image, ImageDraw, ImageOps
 
-
-from PIL import ImageFont
-from PIL import ImageDraw
-from PIL import Image
-from PIL import ImageOps
-
-from sparkline import Spark
+from sparkline import SparkLine
 from gecko import GeckoConnection
+from data import CoinData
 
 
 class Slide:
     """
     Class representing a slide for the ticker, showing the logo, graph, price etc
-     - next_slide()  Build new slide with new data for next currency in list
     """
 
     dir_name = os.path.dirname(__file__)
 
-    def __init__(self):
-        self.logger = logging.getLogger("btcticker.display.image")
-        self.pic_dir = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "images"
-        )
-        self.font_dir = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "fonts/googlefonts"
-        )
+    pic_dir: str = os.path.join(os.path.dirname(os.path.realpath(__file__)), "images")
+    font_dir: str = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fonts/googlefonts"
+    )
 
-        self.font_date = ImageFont.truetype(
-            os.path.join(self.font_dir, "PixelSplitter-Bold.ttf"), 11
-        )
-        self.my_spark = Spark(self.pic_dir)
+    font_date: str = ImageFont.truetype(
+        os.path.join(font_dir, "PixelSplitter-Bold.ttf"), 11
+    )
 
-        self.image = None
-        self.draw = None
-        self.colour = True  # TODO: Read it in from the config file
-        self.inverted = False
-        self.orientation = 90
-        self.volume = False
-        self.data = None
-        self.price_now_string = ""
-        self.price_change = ""
-        self.days = 0
-        self.token_image = None
-        self.gecko = GeckoConnection()
-        self.logger.debug("Slide class initialised, returning...")
+    PRICE_FONT_SIZE = 60
 
-    def generate_slide(self, data, days, inverted, orientation, colour):
-        self.data = data
-        self.days = days
-        self.inverted = inverted
+    logger: logging.Logger = logging.getLogger("btcticker.display.image")
+
+    def __init__(
+        self,
+        size: Tuple[int, int],
+        orientation: int,
+        inverted: bool = False,
+        colour: bool = True,
+    ) -> None:
+        self.size = size
         self.orientation = orientation
-        self.colour = colour
-        self.my_spark.make_spark(self.data.price_stack)
+        self.is_inverted = inverted
+        self.is_colour = colour
+
+        self.image: Image.Image = None
+        self.volume: float = False
+        self.data = None
+
+    def generate_slide(self, data: CoinData) -> Image:
+        self.data = data
         self.build_image()
         return self.image
 
-    def build_image(self):
+    def build_image(self) -> None:
         """
         Takes the price data, the desired coin/fiat combo along with the config info for formatting
         if config is re-written following adjustment we could avoid passing the last two arguments as
         they will just be the first two items of their string in config
         """
         # THIS DOES NOT WORK PROPERLY FOR MY SCREEN SIZE
-        if self.orientation == 0 or self.orientation == 180:
-            self.white_background(self.colour)
-            self.apply_spark(10, 100)
-            self.apply_token(0, 0)
+        if self.orientation in (0, 180):
+            self.white_background()
+            self.apply_spark((10, 100))
+            self.apply_token((0, 0))
             self.apply_price(65)
-            self.apply_price_change(110, 95)
-            self.apply_date(50, 10)
+            self.apply_price_change((110, 95))
+            self.apply_date((50, 10))
             if self.volume:
-                self.apply_volume(100, 240)
+                self.apply_volume((100, 240))
             if self.data.all_time_high_flag:
-                self.apply_all_time_high(174, 61)
+                self.apply_all_time_high((174, 61))
 
-        if self.orientation == 90 or self.orientation == 270:
-            self.logger.debug("Orientation is 90 or 270")
-            self.white_background(self.colour)
-            self.apply_spark(88, 40)
-            self.apply_token(0, 0)
+        if self.orientation in (90, 270):
+            self.white_background()
+            self.apply_spark((88, 40))
+            self.apply_token((0, 0))
             self.apply_price(65)
-            self.apply_price_change(107, 142)
-            self.apply_date(100, 10)
+            self.apply_price_change((107, 142))
+            self.apply_date((100, 10))
             if self.volume:
-                self.apply_volume(100, 210)
+                self.apply_volume((100, 210))
             if self.data.all_time_high_flag:
-                self.apply_all_time_high(174, 61)
+                self.apply_all_time_high((174, 61))
 
-        if self.orientation == 270 or self.orientation == 180:
+        if self.orientation in (180, 270):
             self.image = self.image.rotate(180, expand=True)
 
-        if self.inverted:
+        if self.is_inverted:
             self.image = ImageOps.invert(self.image)
 
-    def white_background(self, colour):
-        if colour:
-            self.image = Image.new("RGB", (320, 240), (255, 255, 255))
+    def white_background(self) -> None:
+        """Creates new White Background"""
+        if self.is_colour:
+            self.image = Image.new(mode="RGB", size=self.size, color=(255, 255, 255))
         else:
-            self.image = Image.new("L", (320, 240), 255)
-        self.draw = ImageDraw.Draw(self.image)
+            self.image = Image.new(mode="L", size=self.size, color=255)
 
-    def calc_price_change(self):
-        price_change_raw = round(
-            (self.data.price_now - self.data.price_stack[0])
-            / self.data.price_now
-            * 100,
-            2,
-        )
-        if price_change_raw >= 10:
-            self.price_change = str("%+d" % price_change_raw) + "%"
+    def generate_percentage_string(self) -> str:
+        """Calculate Price Change Percentages"""
+        percent_number = self.data.price_change_percentage
+        if percent_number >= 10:
+            percent_string = str("%+d" % percent_number) + "%"
         else:
-            self.price_change = str("%+.2f" % price_change_raw) + "%"
+            percent_string = str("%+.2f" % percent_number) + "%"
+        return percent_string
 
-    def apply_volume(self, x, y):
-        self.draw.text(
-            (100, 210),
-            "24h vol : " + self.human_format(self.volume),
+    def apply_volume(self, position: Tuple[int, int]) -> None:
+        """
+        Apply trading volume to Slide
+        position : where on slide to place top left pixel of image
+        """
+        ImageDraw.Draw(self.image).text(
+            xy=position,
+            text=" ".join(["24h", "vol", ":", self.human_format(self.volume)]),
             font=self.font_date,
             fill=0,
         )
 
-    def apply_all_time_high(self, x, y):
-        all_time_high_bitmap = Image.open(os.path.join(self.pic_dir, "ATH.bmp"))
-        self.image.paste(all_time_high_bitmap, (x, y))
+    def apply_all_time_high(self, position: Tuple[int, int]) -> None:
+        """
+        Apply 'All Time High' Image to Slide
+        position : where on slide to place top left pixel of image
+        """
+        all_time_high_image = Image.open(os.path.join(self.pic_dir, "ATH.bmp"))
+        self.image.paste(im=all_time_high_image, box=position)
 
-    def apply_price_change(self, x, y):
-        self.calc_price_change()
-        self.draw.text(
-            (107, 142),
-            str(self.days) + " day : " + self.price_change,
+    def apply_price_change(self, position: Tuple[int, int]) -> None:
+        """
+        Apply Percentage Price Change to Slide
+        position : where on slide to place top left pixel of image
+        """
+        text = " ".join(
+            [
+                str(self.data.data_period_days),
+                "day",
+                ":",
+                self.generate_percentage_string(),
+            ],
+        )
+        ImageDraw.Draw(self.image).text(
+            xy=position,
+            text=text,
             font=self.font_date,
             fill=0,
-        )  # Write price change to screen
+        )
 
-    def apply_price(self, y):
-        font_size = 60
-        symbol_string = currency.symbol(self.data.fiat.upper())
-        if self.data.fiat == "jpy" or self.data.fiat == "cny":
-            symbol_string = "¥"
-        self.format_price()
+    def apply_price(self, y_position: int) -> None:
+        """
+        Apply Price to Slide
+        y_position = number of pixels from left on Slide
+        """
+        fiat = self.data.fiat.upper()
+        symbol = "¥" if fiat in ("JPY", "CNY") else currency.symbol(fiat)
+
+        price = self.format_price(self.data.current_price)
         self.write_wrapped_lines(
-            self.image,
-            symbol_string + self.price_now_string,
-            font_size,
-            y,
-            8,
-            10,
-            "Roboto-Medium",
+            text=symbol + price,
+            fontsize=self.PRICE_FONT_SIZE,
+            y_offset=y_position,
+            line_height=8,
+            max_width=10,
+            font="Roboto-Medium",
         )
 
-    def format_price(self):
-        d = decimal.Decimal(str(self.data.price_now)).as_tuple().exponent
-        self.logger.debug("price_now = %f d = %i", self.data.price_now, d)
-        if self.data.price_now >= 1000:
-            price_now_string = str(
-                format(int(self.data.price_now), ",")
-            )  # If > £1000 ignore pence and add comma seperator
-        elif self.data.price_now < 1:
-            price_now_string = "{:.3g}".format(
-                self.data.price_now
-            )  # If less than £1 then use 3sig figs
-        else:
-            price_now_string = "{:.2f}".format(
-                self.data.price_now
-            )  # If between £1 and £1000 then show £XX.xx
-        self.price_now_string = price_now_string
-        self.logger.debug("price_now_string = %s", self.price_now_string)
+    def format_price(self, price: float) -> str:
+        """Format Price String"""
+        if price >= 1000:  # Ignore pence and add comma seperator
+            formatted_price = str(format(int(price), ","))
+        elif price < 1:  # 3sig fig
+            formatted_price = "{:.3g}".format(price)
+        else:  # £XX.xx
+            formatted_price = "{:.2f}".format(price)
 
-    def apply_date(self, x, y):
-        self.draw.text(
-            (x, y),
-            str(time.strftime("%-I:%M %p, s%d %b %Y")),
+        return formatted_price
+
+    def apply_date(self, position: Tuple[int, int]) -> None:
+        """Apply Date to Slide"""
+        ImageDraw.Draw(self.image).text(
+            xy=position,
+            text=str(time.strftime("%-I:%M %p, s%d %b %Y")),
             font=self.font_date,
             fill=0,
         )
 
-    def apply_spark(self, x, y):
+    def apply_spark(self, position: Tuple[int, int]) -> None:
+        """Apply Sparkline to Slide"""
+        SparkLine(self.pic_dir)
         spark_bitmap = Image.open(os.path.join(self.pic_dir, "spark.bmp"))
-        self.image.paste(spark_bitmap, (x, y))
+        self.image.paste(spark_bitmap, position)
 
-    def apply_token(self, x, y):
-        self.logger.debug("self.inverted= %s", str(self.inverted))
-        if self.inverted:
-            currency_thumbnail = "currency/" + self.data.coin + "INV.bmp"
-        else:
-            currency_thumbnail = "currency/" + self.data.coin + ".bmp"
+    def apply_token(self, position: Tuple[int, int]) -> None:
+        """Apply token image to Slide"""
 
-        self.logger.debug(currency_thumbnail)
+        currency_thumbnail = "currency/" + self.data.coin
+        if self.is_inverted:
+            currency_thumbnail += "INV"
+        currency_thumbnail += ".bmp"
 
         token_filename = os.path.join(self.pic_dir, currency_thumbnail)
 
-        if os.path.isfile(token_filename):
-            token_image = Image.open(token_filename).convert("RGBA")
-        else:
-            token_image = self.fetch_token_image(token_filename)
-        self.image.paste(token_image, (x, y))
+        if not os.path.isfile(token_filename):
+            self.fetch_token_image(token_filename)
+        token_image = Image.open(token_filename).convert("RGBA")
 
-    def fetch_token_image(self, token_filename):
-        self.logger.debug("Getting token Image from Coingecko")
-        token_image_url = (
+        self.image.paste(token_image, position)
+
+    def fetch_token_image(self, token_filename) -> bool:
+        """Fetch Token Image from Web"""
+        url = (
             "https://api.coingecko.com/api/v3/coins/"
             + self.data.coin
             + "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
         )
+        if not GeckoConnection.fetch_json(url):
+            return False
+        token_image_url = GeckoConnection.response.json()["image"]["large"]
+        if not GeckoConnection.fetch_stream(token_image_url):
+            return False
 
-        if self.gecko.fetch(token_image_url):
-            self.logger.debug("Got token info OK")
-        else:
-            self.logger.info("Failed to get token info...unhandled exception")
+        token_image = Image.open(GeckoConnection.response.raw).convert("RGBA")
 
-        if self.gecko.fetch(self.gecko.raw_json["image"]["large"], stream=True):
-            self.logger.debug("Got token image")
-        else:
-            self.logger.info("Failed to get token image...unhandled exception")
-
-        self.token_image = Image.open(self.gecko.raw_stream).convert("RGBA")
-
-        resize = 100, 100
-        self.token_image.thumbnail(resize, Image.ANTIALIAS)
+        target_size = (100, 100)
+        border_size = (10, 10)
+        token_image.thumbnail(target_size, Image.ANTIALIAS)
         # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
         # legible on a black display
-        if self.inverted:
+        if self.is_inverted:
             # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
-            token_image = ImageOps.invert(self.token_image.convert("RGB"))
+            token_image = ImageOps.invert(token_image.convert("RGB"))
             token_image = token_image.convert("RGBA")
         new_image = Image.new(
             "RGBA", (120, 120), "WHITE"
         )  # Create a white rgba background with a 10 pixel border
-        new_image.paste(token_image, (10, 10), token_image)
+        new_image.paste(token_image, border_size, token_image)
         token_image = new_image
-        token_image.thumbnail((100, 100), Image.ANTIALIAS)
+        token_image.thumbnail(target_size, Image.ANTIALIAS)
         token_image.save(token_filename)
-        return token_image
+        return True
 
-    def human_format(self, num):
+    def human_format(self, num: float) -> str:
         """
+        Create human readable string for number
         Convert value to max 3 decimal places with Million, Billion, Trillion etc
         """
         num = float("{:.3f}".format(num))
@@ -255,35 +256,33 @@ class Slide:
 
     def place_text(
         self,
-        img,
-        text,
-        x_offset=0,
-        y_offset=0,
-        fontsize=50,
-        fontstring="Forum-Regular",
-        fill=0,
+        text: str,
+        x_offset: int = 0,
+        y_offset: int = 0,
+        fontsize: int = 50,
+        font_name: str = "Forum-Regular",
     ):
         """
-        Put some centered text at a location on the image (Default centre of screen)
+        Put some centered text at a location on the Slide
+        Default position - centre of screen
         """
-        draw = ImageDraw.Draw(img)
+        canvas = ImageDraw.Draw(self.image)
         try:
             filename = os.path.join(
-                self.dir_name, "./fonts/googlefonts/" + fontstring + ".ttf"
+                self.dir_name, "./fonts/googlefonts/" + font_name + ".ttf"
             )
             font = ImageFont.truetype(filename, fontsize)
         except OSError:
             font = ImageFont.truetype("/usr/share/fonts/TTF/DejaVuSans.ttf", fontsize)
-        img_width, img_height = img.size
-        text_width, _ = font.getsize(text)
-        text_height = fontsize
+        img_width, img_height = self.size
+        text_width, text_height = font.getsize(text)
         draw_x = (img_width - text_width) // 2 + x_offset
         draw_y = (img_height - text_height) // 2 + y_offset
-        draw.text((draw_x, draw_y), text, font=font, fill=fill)
+        canvas.text(xy=(draw_x, draw_y), text=text, font=font, fill=0)
 
-    def bean_a_problem(self, message):
+    def bean_a_problem(self, message: str) -> Image:
         """
-        Display Error Screen
+        Create an Error Slide
         """
         #   A visual cue that the wheels have fallen off
         the_bean = Image.open(os.path.join(self.pic_dir, "thebean.bmp"))
@@ -291,8 +290,8 @@ class Slide:
         draw = ImageDraw.Draw(image)
         image.paste(the_bean, (60, 45))
         draw.text(
-            (95, 15),
-            str(time.strftime("%-H:%M %p, %-d %b %Y")),
+            xy=(95, 15),
+            text=str(time.strftime("%-H:%-M, %-d %b %y")),
             font=self.font_date,
             fill=0,
         )
@@ -301,21 +300,22 @@ class Slide:
 
     def write_wrapped_lines(
         self,
-        img,
-        text,
-        fontsize=20,
-        y_text=20,
-        height=15,
-        width=25,
-        fontstring="Roboto-Light",
-    ):
+        text: str,
+        fontsize: int = 20,
+        y_offset: int = 20,
+        line_height: int = 15,
+        max_width: int = 25,
+        font: str = "Roboto-Light",
+    ) -> None:
         """
         Write text centred on screen to a fixed width, starting y_text down from centre
         """
-        lines = textwrap.wrap(text, width)
-        num_lines = 0
-        for line in lines:
-            self.place_text(img, line, 0, y_text, fontsize, fontstring)
-            y_text += height
-            num_lines += 1
-        return img
+        for line in textwrap.wrap(text, max_width):
+            self.place_text(
+                text=line,
+                x_offset=0,
+                y_offset=y_offset,
+                fontsize=fontsize,
+                font_name=font,
+            )
+            y_offset += line_height
