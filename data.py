@@ -2,6 +2,8 @@ from typing import List
 from dataclasses import field, dataclass
 from PIL import Image
 
+from sparkline import SparkLine
+
 
 @dataclass
 class CoinData:
@@ -16,6 +18,7 @@ class CoinData:
     data_period_days: int = None
     token_image_white_background: Image.Image = None
     token_image_black_background: Image.Image = None
+    spark: Image.Image = None
 
     @property
     def price_stack(self) -> List[float]:

@@ -10,10 +10,8 @@ class SparkLine:
     Class representing the Small Graph (aka Sparkline)
     """
 
-    def __init__(self, pic_dir: str) -> None:
-        self.pic_dir = pic_dir
-
-    def make_spark(self, price_stack: List[float]) -> None:
+    @staticmethod
+    def make_spark(pic_dir: str, price_stack: List[float]) -> Image.Image:
         """Draw and save the sparkline that represents historical data"""
 
         if not price_stack:
@@ -32,11 +30,11 @@ class SparkLine:
         axis.set_yticks([])
         axis.axhline(c="k", linewidth=4, linestyle=(0, (5, 2, 1, 2)))
         # Save the resulting bmp file to the images directory
-        pyplot.savefig(os.path.join(self.pic_dir, "spark.png"), dpi=17)
-        img_sparkline = Image.open(os.path.join(self.pic_dir, "spark.png"))
-        file_out = os.path.join(self.pic_dir, "spark.bmp")
+        pyplot.savefig(os.path.join(pic_dir, "spark.png"), dpi=17)
+        img_sparkline = Image.open(os.path.join(pic_dir, "spark.png"))
+        file_out = os.path.join(pic_dir, "spark.bmp")
         img_sparkline.save(file_out)
         pyplot.close(fig)
         pyplot.cla()  # Close plot to prevent memory error
         axis.cla()  # Close axis to prevent memory error
-        img_sparkline.close()
+        return img_sparkline

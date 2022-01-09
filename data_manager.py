@@ -7,6 +7,7 @@ from PIL import Image, ImageOps
 
 from gecko import GeckoConnection
 from data import CoinData
+from sparkline import SparkLine
 
 
 class DataManager:
@@ -128,7 +129,7 @@ class DataManager:
 
     def refresh(self) -> CoinData:
         """
-        Refresh Data From Coin Gecko
+        Refresh All Data
         """
         # self.clear_data()
         self.data.coin = self.coin
@@ -146,7 +147,7 @@ class DataManager:
             return
         self.process_live_data()
         self.set_token_images()
-
+        self.data.spark = SparkLine.make_spark(self.PIC_DIR, self.data.price_stack)
         return self.data
 
     @property

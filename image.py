@@ -7,8 +7,6 @@ from typing import Tuple
 import currency
 from PIL import ImageFont, Image, ImageDraw, ImageOps
 
-from sparkline import SparkLine
-from gecko import GeckoConnection
 from data import CoinData
 
 
@@ -185,9 +183,7 @@ class Slide:
 
     def apply_spark(self, position: Tuple[int, int]) -> None:
         """Apply Sparkline to Slide"""
-        SparkLine(self.pic_dir)
-        spark_bitmap = Image.open(os.path.join(self.pic_dir, "spark.bmp"))
-        self.image.paste(spark_bitmap, position)
+        self.image.paste(self.data.spark, position)
 
     def apply_token(self, position: Tuple[int, int]) -> None:
         """Apply token image to Slide"""

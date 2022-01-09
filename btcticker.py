@@ -27,8 +27,7 @@ class CryptoTicker:
         button_id = self.callback_request
         if button_id == 17:
             self.screen.inverted = not self.screen.inverted
-            data = self.data_manager.refresh()
-            self.screen.display(data)
+            self.refresh(False)
         elif button_id == 22:
             self.refresh()
         elif button_id == 23:
@@ -38,10 +37,11 @@ class CryptoTicker:
         """Handle Callbacks from Button Press"""
         self.callback_request = button.pin.number
 
-    def refresh(self):
+    def refresh(self, next: bool = True) -> None:
         """Get new data and update screen"""
         self.last_fetch_time = time.time()
-        self.data_manager.next_crypto()
+        if next:
+            self.data_manager.next_crypto()
         data = self.data_manager.refresh()
         self.screen.display(data)
 
@@ -70,7 +70,7 @@ class CryptoTicker:
 
     def run(self):
         """Run the ticker"""
-        self.refresh()
+        self.refresh(False)
         while True:
             time.sleep(0.1)
             if self.callback_request is not None:
