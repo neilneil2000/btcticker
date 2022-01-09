@@ -63,7 +63,6 @@ class Slide:
         if self.orientation in (0, 180):
             self.white_background()
             self.apply_spark((10, 100))
-            self.apply_token((0, 0))
             self.apply_price(65)
             self.apply_price_change((110, 95))
             self.apply_date((50, 10))
@@ -75,7 +74,6 @@ class Slide:
         if self.orientation in (90, 270):
             self.white_background()
             self.apply_spark((88, 40))
-            self.apply_token((0, 0))
             self.apply_price(65)
             self.apply_price_change((107, 142))
             self.apply_date((100, 10))
@@ -84,11 +82,12 @@ class Slide:
             if self.data.all_time_high_flag:
                 self.apply_all_time_high((174, 61))
 
-        if self.orientation in (180, 270):
-            self.image = self.image.rotate(180, expand=True)
-
         if self.is_inverted:
             self.image = ImageOps.invert(self.image)
+        self.apply_token((0, 0))
+
+        if self.orientation in (180, 270):
+            self.image = self.image.rotate(180, expand=True)
 
     def white_background(self) -> None:
         """Creates new White Background"""
