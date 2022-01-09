@@ -82,6 +82,7 @@ class AdaFruitDisplay(Display):
 
     def display(self, data: CoinData) -> None:
         """Display Image representing data"""
+
         slide = Slide(
             size=(self.width, self.height),
             orientation=self.orientation,

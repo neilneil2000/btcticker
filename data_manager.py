@@ -1,9 +1,11 @@
 import logging
 import time
+import os
+
+from typing import List
+from PIL import Image, ImageOps
 
 from gecko import GeckoConnection
-from typing import List
-
 from data import CoinData
 
 
@@ -12,6 +14,7 @@ class DataManager:
 
     SLEEP_TIME = 10
     RETRIES = 5
+    PIC_DIR: str = os.path.join(os.path.dirname(os.path.realpath(__file__)), "images")
 
     def __init__(
         self, data_period_days: int, coins: List[str], fiats: List[str]
@@ -40,6 +43,54 @@ class DataManager:
     def data_period_seconds(self):
         """Returns the number of seconds in the data period"""
         return 60 * 60 * 24 * self.data_period_days
+
+    def set_token_images(self) -> None:
+        self.data.token_image_white_background = self.open_token_image("white")
+        self.data.token_image_black_background = self.open_token_image("black")
+
+    def open_token_image(self, background: str) -> Image.Image:
+        token_filename = "currency/" + self.coin
+        if background == "black":
+            token_filename += "INV"
+        token_filename += ".bmp"
+
+        token_filename = os.path.join(self.PIC_DIR, token_filename)
+        if not os.path.isfile(token_filename):
+            self.fetch_token_image(token_filename, background)
+        return Image.open(token_filename).convert("RGBA")
+
+    def fetch_token_image(self, token_filename: str, background: str) -> bool:
+        """Fetch Token Image from Web"""
+        url = (
+            "https://api.coingecko.com/api/v3/coins/"
+            + self.coin
+            + "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
+        )
+        if not GeckoConnection.fetch_json(url):
+            return False
+        token_image_url = GeckoConnection.response.json()["image"]["large"]
+        if not GeckoConnection.fetch_stream(token_image_url):
+            return False
+
+        token_image = Image.open(GeckoConnection.response.raw).convert("RGBA")
+
+        target_size = (100, 100)
+        border_size = (10, 10)
+        token_image.thumbnail(target_size, Image.ANTIALIAS)
+        # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
+        # legible on a black display
+        if background == "black":
+            # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
+            token_image = ImageOps.invert(token_image.convert("RGB"))
+            token_image = token_image.convert("RGBA")
+        new_image = Image.new(
+            "RGBA", (120, 120), "WHITE"
+        )  # Create a white rgba background with a 10 pixel border
+        new_image.paste(token_image, border_size, token_image)
+        token_image = new_image
+        token_image.thumbnail(target_size, Image.ANTIALIAS)
+        token_image.save(token_filename)
+        return True
 
     def next_crypto(self) -> None:
         """Increment Crypto Pointer"""
@@ -94,6 +145,7 @@ class DataManager:
         if not self.fetch_live_price():
             return
         self.process_live_data()
+        self.set_token_images()
 
         return self.data
 

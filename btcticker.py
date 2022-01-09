@@ -3,16 +3,17 @@ import time
 import logging
 import argparse
 
+from gpiozero import Button
+
 from display import Display, AdaFruitDisplay
 from config import Params
 from data_manager import DataManager
 from buttons import Buttons
-from gpiozero import Button
 
 
 class CryptoTicker:
     def __init__(self):
-        # TODO: Allow to pass in types of screen and exchange using Bridge method and abstract classes
+        # TODO: Allow to pass in types of screen and exchange using Bridge method and abc classes
         self.config: Params = None
         self.data_manager: DataManager = None
         self.screen: Display = None
@@ -22,6 +23,7 @@ class CryptoTicker:
         self.callback_request = None
 
     def callback_executor(self):
+        """Function to Execute Requested Callbacks"""
         button_id = self.callback_request
         if button_id == 17:
             self.screen.inverted = not self.screen.inverted

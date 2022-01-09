@@ -192,51 +192,12 @@ class Slide:
     def apply_token(self, position: Tuple[int, int]) -> None:
         """Apply token image to Slide"""
 
-        currency_thumbnail = "currency/" + self.data.coin
         if self.is_inverted:
-            currency_thumbnail += "INV"
-        currency_thumbnail += ".bmp"
-
-        token_filename = os.path.join(self.pic_dir, currency_thumbnail)
-
-        if not os.path.isfile(token_filename):
-            self.fetch_token_image(token_filename)
-        token_image = Image.open(token_filename).convert("RGBA")
+            token_image = self.data.token_image_black_background
+        else:
+            token_image = self.data.token_image_white_background
 
         self.image.paste(token_image, position)
-
-    def fetch_token_image(self, token_filename) -> bool:
-        """Fetch Token Image from Web"""
-        url = (
-            "https://api.coingecko.com/api/v3/coins/"
-            + self.data.coin
-            + "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
-        )
-        if not GeckoConnection.fetch_json(url):
-            return False
-        token_image_url = GeckoConnection.response.json()["image"]["large"]
-        if not GeckoConnection.fetch_stream(token_image_url):
-            return False
-
-        token_image = Image.open(GeckoConnection.response.raw).convert("RGBA")
-
-        target_size = (100, 100)
-        border_size = (10, 10)
-        token_image.thumbnail(target_size, Image.ANTIALIAS)
-        # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
-        # legible on a black display
-        if self.is_inverted:
-            # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
-            token_image = ImageOps.invert(token_image.convert("RGB"))
-            token_image = token_image.convert("RGBA")
-        new_image = Image.new(
-            "RGBA", (120, 120), "WHITE"
-        )  # Create a white rgba background with a 10 pixel border
-        new_image.paste(token_image, border_size, token_image)
-        token_image = new_image
-        token_image.thumbnail(target_size, Image.ANTIALIAS)
-        token_image.save(token_filename)
-        return True
 
     def human_format(self, num: float) -> str:
         """
