@@ -42,8 +42,8 @@ class CryptoTicker:
         self.last_fetch_time = time.time()
         if next:
             self.data_manager.next_crypto()
-        data = self.data_manager.refresh()
-        self.screen.display(data)
+        self.data_manager.refresh()
+        self.screen.display(self.data_manager.data)
 
     def initialise(self):
         """Initialise Ticker"""

@@ -127,7 +127,7 @@ class DataManager:
         self.data.all_time_high = None
         self.data.volume = None
 
-    def refresh(self) -> CoinData:
+    def refresh(self) -> bool:
         """
         Refresh All Data
         """
@@ -140,15 +140,15 @@ class DataManager:
         start_time = end_time - self.data_period_seconds
 
         if not self.fetch_historical_data(start_time, end_time):
-            return
+            return False
         self.process_historical_data()
 
         if not self.fetch_live_price():
-            return
+            return False
         self.process_live_data()
         self.set_token_images()
         self.data.spark = SparkLine.make_spark(self.PIC_DIR, self.data.price_stack)
-        return self.data
+        return True
 
     @property
     def all_time_high_flag(self):
