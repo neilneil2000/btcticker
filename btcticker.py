@@ -37,10 +37,10 @@ class CryptoTicker:
         """Handle Callbacks from Button Press"""
         self.callback_request = button.pin.number
 
-    def refresh(self, next: bool = True) -> None:
+    def refresh(self, next_crypto: bool = True) -> None:
         """Get new data and update screen"""
         self.last_fetch_time = time.time()
-        if next:
+        if next_crypto:
             self.data_manager.next_crypto()
         self.data_manager.refresh()
         self.screen.display(self.data_manager.data)
