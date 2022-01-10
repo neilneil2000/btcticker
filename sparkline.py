@@ -1,4 +1,5 @@
 import os
+import io
 from typing import List
 from statistics import mean
 from matplotlib import pyplot
@@ -11,11 +12,8 @@ class SparkLine:
     """
 
     @staticmethod
-    def make_spark(pic_dir: str, price_stack: List[float]) -> Image.Image:
+    def generate_spark(price_stack: List[float]) -> Image.Image:
         """Draw and save the sparkline that represents historical data"""
-
-        if not price_stack:
-            return
         mean_price = mean(price_stack)
         adjusted_price = [
             price - mean_price for price in price_stack
@@ -29,12 +27,11 @@ class SparkLine:
         axis.set_xticks([])
         axis.set_yticks([])
         axis.axhline(c="k", linewidth=4, linestyle=(0, (5, 2, 1, 2)))
-        # Save the resulting bmp file to the images directory
-        pyplot.savefig(os.path.join(pic_dir, "spark.png"), dpi=17)
-        img_sparkline = Image.open(os.path.join(pic_dir, "spark.png"))
-        file_out = os.path.join(pic_dir, "spark.bmp")
-        img_sparkline.save(file_out)
+
+        buf = io.BytesIO()
+        pyplot.savefig(buf, format="png", dpi=17)
         pyplot.close(fig)
         pyplot.cla()  # Close plot to prevent memory error
         axis.cla()  # Close axis to prevent memory error
-        return img_sparkline
+        buf.seek(0)
+        return Image.open(buf)

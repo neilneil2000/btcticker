@@ -41,6 +41,7 @@ class CoinData:
 
     @property
     def all_time_high_flag(self) -> bool:
+        """Return True is current price at or equal to all time high"""
         if self.current_price >= self.all_time_high:
             return True
         return False

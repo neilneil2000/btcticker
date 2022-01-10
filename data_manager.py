@@ -147,7 +147,7 @@ class DataManager:
             return False
         self.process_live_data()
         self.set_token_images()
-        self.data.spark = SparkLine.make_spark(self.PIC_DIR, self.data.price_stack)
+        self.data.spark = SparkLine.generate_spark(self.data.price_stack)
         return True
 
     @property
