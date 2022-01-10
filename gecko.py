@@ -29,7 +29,10 @@ class GeckoConnection:
         Returns True on success, false on failure
         """
         cls.logger.debug("Fetching: %s", url)
-        cls.response = requests.get(url=url, headers=cls.HEADERS, stream=stream)
+        try:
+            cls.response = requests.get(url=url, headers=cls.HEADERS, stream=stream)
+        except ConnectionError:
+            return False
         cls.logger.debug(
             "Got info from CoinGecko. Status Code %i",
             cls.response.status_code,
