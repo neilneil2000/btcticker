@@ -57,7 +57,8 @@ class DataManager:
 
         token_filename = os.path.join(self.PIC_DIR, token_filename)
         if not os.path.isfile(token_filename):
-            self.fetch_token_image(token_filename, background)
+            if not self.fetch_token_image(token_filename, background):
+                return None
         return Image.open(token_filename).convert("RGBA")
 
     def fetch_token_image(self, token_filename: str, background: str) -> bool:
@@ -67,13 +68,14 @@ class DataManager:
             + self.coin
             + "?tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false"
         )
-        if not GeckoConnection.fetch_json(url):
+        connection = GeckoConnection()
+        if not connection.fetch_json(url):
             return False
-        token_image_url = GeckoConnection.response.json()["image"]["large"]
-        if not GeckoConnection.fetch_stream(token_image_url):
+        token_image_url = connection.response.json()["image"]["large"]
+        if not connection.fetch_stream(token_image_url):
             return False
 
-        token_image = Image.open(GeckoConnection.response.raw).convert("RGBA")
+        token_image = Image.open(connection.response.raw).convert("RGBA")
 
         target_size = (100, 100)
         border_size = (10, 10)
