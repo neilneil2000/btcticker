@@ -1,14 +1,35 @@
 import os
-import pygame
 import logging
+import pygame
+
+from abc import ABC, abstractmethod
 
 import matplotlib as mpl
+from PIL import Image
 
-from config import Params 
 from image import Slide
-from data import Data
+from data import CoinData
 
-class Display:
+
+class Display(ABC):
+    @abstractmethod
+    def initialise(self) -> None:
+        """Set up Display ready to display first image"""
+
+    @abstractmethod
+    def toggle_inversion(self) -> None:
+        """Toggle Image Inversion and refresh screen"""
+
+    @abstractmethod
+    def display(self, data: CoinData) -> None:
+        """Update Display to reflect data"""
+
+    @abstractmethod
+    def refresh(self) -> None:
+        """Refresh Display with current settings"""
+
+
+class AdaFruitDisplay(Display):
     """
     Top Level Class Providing the Following Functions:
      - refresh_slide()  Reload Existing Image - to account for any changes in settings since last load
@@ -18,79 +39,84 @@ class Display:
      - show_error()     Show Error Screen
     """
 
-    
+    def __init__(
+        self,
+        orientation: int = 90,
+        inverted: bool = False,
+        colour: bool = False,
+    ) -> None:
 
-    def __init__(self, width=320, height=240):
+        self.width: int = 320
+        self.height: int = 240
+        self.orientation: int = orientation
+        self.inverted: bool = inverted
+        self.colour: bool = colour
+        self.logger: logging.Logger = None
+        self.lcd: pygame.Surface = None
 
+        self.pic_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "images"
+        )
+        self.font_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "fonts/googlefonts"
+        )
+
+    def initialise(self) -> None:
+        """Set Up Environment and start running"""
         self.logger = logging.getLogger("btcticker.display")
-
-        os.putenv('SDL_FBDEV', '/dev/fb0')  # Set Output to PiTFT - Could be fb1 if desktop installed
-        os.putenv('SDL_AUDIODRIVER', 'dsp')  # Prevent ALSA errors in PyGame
-
-        self.pic_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'images')
-        self.font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fonts/googlefonts')
-
-        mpl.use('Agg')
-
-        self.width = width
-        self.height = height
-
         pygame.init()
         self.lcd = pygame.display.set_mode((self.width, self.height))
         pygame.mouse.set_visible(False)
 
-        self.logger.debug("Pygame Started, now opening config file")
-        self.config = Params()
-        self.slide = Slide()
-        self.my_data = Data()
+        os.putenv(
+            "SDL_FBDEV", "/dev/fb0"
+        )  # Set Output to PiTFT - Could be fb1 if desktop installed
+        os.putenv("SDL_AUDIODRIVER", "dsp")  # Prevent ALSA errors in PyGame
 
-        self.cryptos = self.config.get_cryptos()
-        self.fiats = self.config.get_fiats()
-        self.crypto_index = 0
-        self.fiat_index = 0
+        mpl.use("Agg")
 
-        self.logger.debug("Display Class Initialised, returning...")
+    def invert(self, button_id=0) -> None:
+        print("Inversion Callback Running")
+        self.toggle_inversion()
+        self.refresh()
 
-    def get_orientation(self):
-        return self.config['display']['orientation']
+    def display(self, data: CoinData) -> None:
+        """Display Image representing data"""
 
-    def set_orientation(self,angle):
-        self.config['display']['orientation'] = angle
-        Slide.refresh()
+        slide = Slide(
+            size=(self.width, self.height),
+            orientation=self.orientation,
+            inverted=self.inverted,
+            colour=self.colour,
+        )
+        image = slide.generate_slide(data)
+        self.show_pillow_image(image)
 
-    def toggle_invert(self):
-        self.config['display']['inverted'] = not self.config['display']['inverted']
-        Slide.refresh()
+    def __del__(self):
+        pygame.quit()
 
-    def update(self, img):
-        img = img.convert('RGB')
+    def toggle_inversion(self) -> None:
+        """Toggle Screen colour inversion"""
+        self.inverted = not self.inverted
+        self.refresh()
+
+    def show_pillow_image(self, img: Image) -> None:
+        """Display PIL Image object on screen"""
+        img = img.convert("RGB")
         py_image = pygame.image.fromstring(img.tobytes(), img.size, img.mode).convert()
         self.lcd.blit(py_image, (0, 0))
         pygame.display.update()
 
-    def next_pairing(self):
-        """
-        Change Pointer to point to next crypto
-        """
-        if self.crypto_index + 1 >= len(self.cryptos):
-            self.crypto_index = 0
-        else:
-            self.crypto_index += 1
-        coin = self.cryptos[self.crypto_index]
-        fiat = self.fiats[self.fiat_index]
-        self.logger.debug("Getting Pairing: " + coin + " " + fiat)
-        return self.my_data.fetch_pair(coin, fiat)
+    def refresh(self) -> None:
+        """Refresh Image with current settings"""
 
-    def next_slide(self):
-        if self.next_pairing():
-            self.logger.debug("Pairing Ready, now generating slide")
-            image = self.slide.generate_slide(self.my_data, self.config.get_days(), inverted=self.config.get_inverted(), orientation=self.config.get_orientation(), colour=self.config.get_colour())
-        else:
-            image = self.slide.bean_a_problem("Error Getting Pairing")
-        self.update(image)
-
-    def bean_a_problem(self, message):
-        image = self.slide.bean_a_problem(message)
-        self.update(image)
-    
-
+    def bean_a_problem(self, message) -> None:
+        """Display Error Message on Screen"""
+        problem_slide = Slide(
+            size=(self.width, self.height),
+            orientation=self.orientation,
+            inverted=self.inverted,
+            colour=self.colour,
+        )
+        image = problem_slide.bean_a_problem(message)
+        self.show_pillow_image(image)

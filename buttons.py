@@ -1,42 +1,37 @@
-import RPi.GPIO as GPIO
-import time
-from display import Display
 import logging
-from config import Params
+import pygame
+from gpiozero import Button
+from subprocess import check_call
+
 
 class Buttons:
     """
     Top level class controlling the function of buttons/GPIO
     """
-    
-    def __init__(self):
+
+    def __init__(self, bounce_time: float = 0.1):
+        self.logger: logging.Logger = None
+        self.bounce_time = bounce_time
+        self.buttons = []
+
+    def initialise(self):
+        """Initialise Buttons"""
         self.logger = logging.getLogger("btcticker.buttons")
-        self.bounce_time = 500
-        self.buttons = [17,22,23]
-        self.config = Params()
-        self.callback_running = False
-        self.screen = Display()
-        GPIO.setmode(GPIO.BCM)
-        for button in self.buttons:
-            GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        for button in self.buttons:
-            GPIO.add_event_detect(button, GPIO.FALLING, callback=self.button_press, bouncetime=self.bounce_time)
 
+    def configure_button(self, button_id: int, callback) -> None:
+        """Configure a specific button"""
+        new_button = Button(button_id, bounce_time=self.bounce_time)
+        new_button.when_pressed = callback
+        self.buttons.append(new_button)
 
-    def __del__(self):
-        GPIO.cleanup()  
+    def configure_shutdown_button(self, button_id) -> None:
+        """Configure a button to shutdown the pi"""
+        shutdown_button = Button(button_id, hold_time=2)
+        shutdown_button.when_held = self.shutdown
+        self.buttons.append(shutdown_button)
 
-    def button_press(self,channel):
-        while(self.callback_running):
-            time.sleep(0.1)
-        self.callback_running = True
-        if channel == 17:
-            self.logger.info('Cycle currencies')
-            self.screen.next_slide
-        elif channel == 22:
-            self.logger.info('Rotate - 90')
-            self.screen.set_orientation((self.screen.get_orientation() + 90) % 360)
-        elif channel == 23:
-            self.logger.info('Invert Display')
-            self.screen.toggle_invert()
-        self.callback_running = False   
+    def shutdown(self) -> None:
+        """Shutdown Pi"""
+        print("Shutdown Button Held Down...powering off")
+        pygame.quit()  # This turns the screen off to display the shutdown
+        check_call(["sudo", "poweroff"])
