@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import sys
 import time
 import logging
 import argparse
@@ -42,8 +43,8 @@ class CryptoTicker:
         self.last_fetch_time = time.time()
         if next_crypto:
             self.data_manager.next_crypto()
-        self.data_manager.refresh()
-        self.screen.display(self.data_manager.data)
+        if self.data_manager.refresh():
+            self.screen.display(self.data_manager.data)
 
     def initialise(self):
         """Initialise Ticker"""
@@ -70,7 +71,7 @@ class CryptoTicker:
 
     def run(self):
         """Run the ticker"""
-        self.refresh(False)
+        self.refresh(next_crypto=False)
         while True:
             time.sleep(0.1)
             if self.callback_request is not None:
@@ -103,7 +104,7 @@ def main():
         app.run()
     except KeyboardInterrupt:
         print("ctrl + c...")
-        quit()
+        sys.exit()
 
 
 if __name__ == "__main__":

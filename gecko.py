@@ -12,6 +12,7 @@ class GeckoConnection:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.response: requests.Response = None
+        self.timeout = (3, 8)
 
     def fetch_json(self, url: str) -> bool:
         """Get JSON formatted data from Coingecko - e.g. a dataset"""
@@ -28,8 +29,11 @@ class GeckoConnection:
         """
         self.logger.debug("Fetching: %s", url)
         try:
-            self.response = requests.get(url=url, headers=self.HEADERS, stream=stream)
+            self.response = requests.get(
+                url=url, headers=self.HEADERS, stream=stream, timeout=self.timeout
+            )
         except ConnectionError:
+            print("CONNECTION ERROR!")
             return False
         self.logger.debug(
             "Got info from CoinGecko. Status Code %i",
