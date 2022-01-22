@@ -14,6 +14,7 @@ class Params:
     def __init__(self, filename: str = config_file) -> None:
         self.logger = logging.getLogger("btcticker.config")
         self.config = {}
+        self.buttons = {}
         self.read_from_file(filename)
         self.parse_config_file()
 
@@ -34,6 +35,10 @@ class Params:
         self.update_frequency = max(
             5.0, float(self.config["ticker"]["updatefrequency"])
         )
+
+        self.buttons.update({"invert": self.config["buttons"]["invert"]})
+        self.buttons.update({"next_crypto": self.config["buttons"]["nextcrypto"]})
+        self.buttons.update({"shutdown": self.config["buttons"]["shutdown"]})
 
     def read_from_file(self, filename: str = config_file) -> None:
         """Read YAML file"""
