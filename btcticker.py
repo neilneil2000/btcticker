@@ -21,22 +21,25 @@ class CryptoTicker:
         self.my_buttons: Buttons = None
         self.logger: logging.Logger = None
         self.last_fetch_time: float = None
-        self.callback_request = None
+        self.callback_button_number = None
 
     def callback_executor(self):
         """Function to Execute Requested Callbacks"""
-        button_id = self.callback_request
-        if button_id == 17:
+        button_action = ""
+        for button_action, button_number in self.config.buttons.items():
+            if button_number == self.callback_button_number:
+                break
+        if button_action == "invert":
             self.screen.inverted = not self.screen.inverted
             self.refresh(False)
-        elif button_id == 22:
+        elif button_action == "next_crypto":
             self.refresh()
-        elif button_id == 23:
-            pass
+
+        self.callback_button_number = None
 
     def callback_manager(self, button: Button) -> None:
         """Handle Callbacks from Button Press"""
-        self.callback_request = button.pin.number
+        self.callback_button_number = button.pin.number
 
     def refresh(self, next_crypto: bool = True) -> None:
         """Get new data and update screen"""
@@ -62,21 +65,23 @@ class CryptoTicker:
         )
         self.screen.initialise()
 
+        if not self.config.buttons:
+            return
         self.my_buttons = Buttons()
         self.my_buttons.initialise()
-        self.my_buttons.configure_button(17, self.callback_manager)
-        self.my_buttons.configure_button(22, self.callback_manager)
-        self.my_buttons.configure_shutdown_button(23)
-        # my_buttons.configure_button(23, next_crypto)
+        for action, number in self.config.buttons.items():
+            if action == "shutdown":
+                self.my_buttons.configure_shutdown_button(number)
+            else:
+                self.my_buttons.configure_button(number, self.callback_manager)
 
     def run(self):
         """Run the ticker"""
         self.refresh(next_crypto=False)
         while True:
             time.sleep(0.1)
-            if self.callback_request is not None:
+            if self.callback_button_number is not None:
                 self.callback_executor()
-                self.callback_request = None
             if time.time() - self.last_fetch_time > self.config.update_frequency:
                 if self.config.cycle:
                     self.data_manager.next_crypto()
