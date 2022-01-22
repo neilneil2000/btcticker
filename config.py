@@ -35,10 +35,15 @@ class Params:
         self.update_frequency = max(
             5.0, float(self.config["ticker"]["updatefrequency"])
         )
-
-        self.buttons.update({"invert": self.config["buttons"]["invert"]})
-        self.buttons.update({"next_crypto": self.config["buttons"]["nextcrypto"]})
-        self.buttons.update({"shutdown": self.config["buttons"]["shutdown"]})
+        if "buttons" in self.config:
+            if "invert" in self.config["buttons"]:
+                self.buttons.update({"invert": self.config["buttons"]["invert"]})
+            if "nextcrypto" in self.config["buttons"]:
+                self.buttons.update(
+                    {"next_crypto": self.config["buttons"]["nextcrypto"]}
+                )
+            if "shutdown" in self.config["buttons"]:
+                self.buttons.update({"shutdown": self.config["buttons"]["shutdown"]})
 
     def read_from_file(self, filename: str = config_file) -> None:
         """Read YAML file"""
