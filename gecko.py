@@ -1,3 +1,4 @@
+import datetime
 import logging
 import requests
 
@@ -32,8 +33,9 @@ class GeckoConnection:
             self.response = requests.get(
                 url=url, headers=self.HEADERS, stream=stream, timeout=self.timeout
             )
-        except ConnectionError:
-            print("CONNECTION ERROR!")
+        except (requests.ConnectionError, requests.ConnectTimeout) as e:
+            print(f"{str(datetime.datetime.now())} CONNECTION ERROR!")
+            print(e)
             return False
         self.logger.debug(
             "Got info from CoinGecko. Status Code %i",
