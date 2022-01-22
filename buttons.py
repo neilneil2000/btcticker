@@ -1,6 +1,6 @@
 import logging
 import pygame
-from gpiozero import Button
+from gpiozero import Button, GPIOZeroError, GPIOZeroWarning
 from subprocess import check_call
 
 
@@ -20,15 +20,23 @@ class Buttons:
 
     def configure_button(self, button_id: int, callback) -> None:
         """Configure a specific button"""
-        new_button = Button(button_id, bounce_time=self.bounce_time)
-        new_button.when_pressed = callback
-        self.buttons.append(new_button)
+        try:
+            new_button = Button(button_id, bounce_time=self.bounce_time)
+        except GPIOZeroError as e:
+            self.logger.error("Error Setting Pin %s: %s", str(button_id), str(e))
+        else:
+            new_button.when_pressed = callback
+            self.buttons.append(new_button)
 
     def configure_shutdown_button(self, button_id) -> None:
         """Configure a button to shutdown the pi"""
-        shutdown_button = Button(button_id, hold_time=2)
-        shutdown_button.when_held = self.shutdown
-        self.buttons.append(shutdown_button)
+        try:
+            shutdown_button = Button(button_id, hold_time=2)
+        except GPIOZeroError as e:
+            self.logger.error("Error Setting Pin %s: %s", str(button_id), str(e))
+        else:
+            shutdown_button.when_held = self.shutdown
+            self.buttons.append(shutdown_button)
 
     def shutdown(self) -> None:
         """Shutdown Pi"""
