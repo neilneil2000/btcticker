@@ -82,7 +82,7 @@ class Slide:
 
         if self.is_inverted:
             self.image = ImageOps.invert(self.image)
-        self.apply_token((0, 0))
+        self.apply_token((10, 10))
 
         if self.orientation in (180, 270):
             self.image = self.image.rotate(180, expand=True)

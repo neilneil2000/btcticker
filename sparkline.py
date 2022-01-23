@@ -1,7 +1,7 @@
-import os
 import io
-from typing import List
 from statistics import mean
+from typing import List
+
 from matplotlib import pyplot
 from PIL import Image
 

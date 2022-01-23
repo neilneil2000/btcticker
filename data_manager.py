@@ -2,8 +2,8 @@ import logging
 import time
 import os
 
-from typing import List
-from PIL import Image, ImageOps
+from typing import List, Tuple
+from PIL import Image, ImageColor, ImageDraw
 
 from gecko import GeckoConnection
 from data import CoinData
@@ -50,10 +50,7 @@ class DataManager:
         self.data.token_image_black_background = self.open_token_image("black")
 
     def open_token_image(self, background: str) -> Image.Image:
-        token_filename = "currency/" + self.coin
-        if background == "black":
-            token_filename += "INV"
-        token_filename += ".bmp"
+        token_filename = "currency/" + self.coin + "_" + background + ".bmp"
 
         token_filename = os.path.join(self.PIC_DIR, token_filename)
         if not os.path.isfile(token_filename):
@@ -61,8 +58,10 @@ class DataManager:
                 return None
         return Image.open(token_filename).convert("RGBA")
 
-    def fetch_token_image(self, token_filename: str, background: str) -> bool:
-        """Fetch Token Image from Web"""
+    def fetch_token_image(
+        self, token_filename: str, target_bg_colour_name: str
+    ) -> bool:
+        """Fetch Token Image from Web and change background to match target"""
         url = (
             "https://api.coingecko.com/api/v3/coins/"
             + self.coin
@@ -71,29 +70,46 @@ class DataManager:
         connection = GeckoConnection()
         if not connection.fetch_json(url):
             return False
+
         token_image_url = connection.response.json()["image"]["large"]
         if not connection.fetch_stream(token_image_url):
             return False
 
         token_image = Image.open(connection.response.raw).convert("RGBA")
 
-        target_size = (100, 100)
-        border_size = (10, 10)
-        token_image.thumbnail(target_size, Image.ANTIALIAS)
-        # If inverted is true, invert the token symbol before placing if on the white BG so that it is uninverted at the end - this will make things more
-        # legible on a black display
-        if background == "black":
-            # PIL doesnt like to invert binary images, so convert to RGB, invert and then convert back to RGBA
-            token_image = ImageOps.invert(token_image.convert("RGB"))
-            token_image = token_image.convert("RGBA")
-        new_image = Image.new(
-            "RGBA", (120, 120), "WHITE"
-        )  # Create a white rgba background with a 10 pixel border
-        new_image.paste(token_image, border_size, token_image)
-        token_image = new_image
-        token_image.thumbnail(target_size, Image.ANTIALIAS)
-        token_image.save(token_filename)
+        bg_colour = self.get_background_colour(token_image)
+        target_bg_colour = ImageColor.getrgb(target_bg_colour_name)
+        if self.is_transparent(bg_colour):
+            new_image = Image.new("RGBA", token_image.size, target_bg_colour_name)
+            new_image.paste(im=token_image, mask=token_image)
+        else:
+            new_image = Image.new(
+                mode="RGBA",
+                size=(token_image.width + 2, token_image.height + 2),
+                color=bg_colour,
+            )
+            new_image.paste(im=token_image, box=(1, 1), mask=token_image)
+            r, g, b, _ = bg_colour
+            if (r, g, b) != target_bg_colour:
+                r, g, b = target_bg_colour
+                target_bg_colour = (r, g, b, 255)
+                ImageDraw.floodfill(
+                    image=new_image, xy=(0, 0), value=target_bg_colour, thresh=20
+                )
+        new_image.thumbnail(size=(80, 80), resample=Image.ANTIALIAS)
+        new_image.save(token_filename)
         return True
+
+    @staticmethod
+    def is_transparent(pixel: Tuple[int, int, int, int]) -> bool:
+        if pixel[-1] == 0:
+            return True
+        return False
+
+    @staticmethod
+    def get_background_colour(image: Image.Image):
+        pixels = image.load()
+        return pixels[0, 0]
 
     def next_crypto(self) -> None:
         """Increment Crypto Pointer"""
