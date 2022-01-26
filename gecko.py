@@ -33,7 +33,11 @@ class GeckoConnection:
             self.response = requests.get(
                 url=url, headers=self.HEADERS, stream=stream, timeout=self.timeout
             )
-        except (requests.ConnectionError, requests.ConnectTimeout) as e:
+        except (
+            requests.ConnectionError,
+            requests.ConnectTimeout,
+            requests.ReadTimeout,
+        ) as e:
             print(f"{str(datetime.datetime.now())} CONNECTION ERROR!")
             print(e)
             return False
