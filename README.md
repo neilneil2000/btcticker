@@ -52,7 +52,7 @@ Now clone this script
 cd ~
 git clone https://github.com/neilneil2000/btcticker.git
 ```
-Move to the `btcticker` directory, copy the example config to `config.yaml` and move the required part of the waveshare directory to the `btcticker` directory
+Move to the `btcticker` directory, copy the example config to `config.yaml`
 ```
 cd btcticker
 cp config_example.yaml config.yaml
@@ -61,53 +61,60 @@ Install the required Python3 modules
 ```
 sudo python3 -m pip install -r requirements.txt
 ```
-# Configuration vi config file
 
-The file `config.yaml` (the copy of `config_example.yaml` you made earlier) contains a number of options that may be tweaked:
-
+## Autostart
+Set Permissions for startup script
 ```
-display:
-  cycle: true
-  inverted: false
-  orientation: 90
-  trendingmode: false
-  showvolume: false
-  showrank: false
-ticker:
-  currency: bitcoin,ethereum,cardano
-  exchange: default
-  fiatcurrency: usd,eur,gbp
-  sparklinedays: 1 
-  updatefrequency: 300
+chmod 777 btcticker.startup.sh
 ```
+Create New SystemCtl Service
+```
+cat <<EOF | sudo tee /etc/systemd/system/btcticker.service
+[Unit]
+Description=Bitcoin Ticker
+After=network.service
 
-## Values
+[Service]
+Type=simple
+KillSignal=SIGHUP
+ExecStart=/home/pi/btcticker/btcticker.startup.sh
+WorkingDirectory=/home/pi/btcticker/
+Restart=always
 
-- **cycle**: switch the display between the listed currencies if set to **true**, display only the first on the list if set to **false**
-- **inverted**: Black text on grey background if **false**. Grey text on black background if **true**
-- **orientation**: Screen rotation in degrees , can take values **0,90,180,270**
-- **trendingmode**: If **true**, it checks the 7 coins that coingecko lists as trending and also displays them (names are included in display)
-- **showvolume, showrank**: **true** to include in display, **false** to omit
-- **currency**: the coin(s) you would like to display (must be the coingecko id)
-- **exchange**: default means use coingecko price, it can also be set to a specific exchange name such as **gdax** (coinbase), **binance** or **kraken** (full list on coingecko api [page](https://www.coingecko.com/api/documentations/v3)) 
-- **fiatcurrency**: currently only uses first one (unless you are cycling with buttons)
-- **sparklinedays**: Number of days of historical data appearing on chart
-- **updatefrequency**: (in seconds), how often to refresh the display
+[Install]
+WantedBy=multi-user.target
 
-## Trending mode
+EOF
+```
+Enable SystemCtl for our Service
+```
+sudo systemctl enable btcticker.service
+```
+## Config.yaml Values
 
-When you activate trending mode (by setting to true in the config file, in addition to your coins, the ticker will cycle through 7 coins that are currently listing as trending on CoinGecko (see photo below).
+- **display**:
+   - **colour**: Display will use glorious technicolour if set to **true** or grayscale if set to **false**
+   - **cycle**: switch the display between the listed currencies if set to **true**, display only the first on the list if set to **false**
+   - **inverted** :  switches the screen between a white and black background
+   - **orientation**: Screen rotation in degrees , can take values **0,90,180,270**
+   - **showvolume, showrank**: **true** to include in display, **false** to omit
+- **ticker**:
+   - **currency**: the coin(s) you would like to display (must be the coingecko id)
+   - **fiatcurrency**: currently only uses first one (unless you are cycling with buttons)
+   - **sparklinedays**: Number of days of historical data appearing on chart
+   - **updatefrequency**: (in seconds), how often to refresh the display
+- **buttons**: The below take GPIO pin numbers (BCM) to activate additional functions
+   - **invert**: GPIO pin to toggle between black and white backgrounds
+   - **nextcrypto**: GPIO pin to skip to next crypto in list
+   - **shutdown**: GPIO pin to shutdown device (must hold for 3 seconds)
 
-![Action Shot](/images/actionshot/Trending.jpg)
+
 
 # Contributing
 
 To contribute, please fork the repository and use a feature branch. Pull requests are welcome.
 
-# Links
-[![Watch the video](https://img.youtube.com/vi/DNLUmJb7Mj8/maxresdefault.jpg)](https://youtu.be/DNLUmJb7Mj8) 
-- Video of the unit working [here](https://youtu.be/DNLUmJb7Mj8)
-- A fully assembled ticker or frames can be obtained at [veeb.ch](http://www.veeb.ch/)
+
 
 
 # Licencing
