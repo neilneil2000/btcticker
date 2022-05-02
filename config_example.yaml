@@ -12,4 +12,7 @@ ticker:
   fiatcurrency: usd,eur,gbp
   sparklinedays: 1 
   updatefrequency: 300
-
+buttons:
+  invert: 17
+  nextcrypto: 22
+  shutdown: 27
