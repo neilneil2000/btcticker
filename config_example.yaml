@@ -1,5 +1,6 @@
 display:
   cycle: true
+  colour: true
   inverted: false
   orientation: 90
   trendingmode: false
